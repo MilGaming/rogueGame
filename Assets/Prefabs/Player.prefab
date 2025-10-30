@@ -318,6 +318,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
   _health: 1000
+  scoreUI: {fileID: 0}
 --- !u!114 &7220147792132035545
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -338,7 +339,7 @@ MonoBehaviour:
   acceleration: 100
   deceleration: 100
   dashSpeed: 40
-  dashLength: 0.15
+  dashLength: 0.1
   dashCooldown: 2
   shield: {fileID: 7225911910317484900}
   shieldSpeed: 60
