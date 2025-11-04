@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class meleeDamageZone : MonoBehaviour
@@ -83,9 +84,9 @@ public class meleeDamageZone : MonoBehaviour
                         }
                     }
                 }
-
+                GameObject attacker = transform.parent != null ? transform.parent.gameObject : gameObject;
                 // If no shield blocks the path, deal damage
-                player.TakeDamage(damage);
+                player.TakeDamage(damage, attacker);
             }
         }
 
