@@ -17,7 +17,7 @@ public class SpikeTrap : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            player.TakeDamage(damage);
+            player.TakeDamage(damage, gameObject);
         }
     }
     
