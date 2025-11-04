@@ -10,6 +10,9 @@ public class Projectile : MonoBehaviour
     float _damage;
     bool _unblockable = false;
 
+    GameObject _instigator;
+
+    public void SetInstigator(GameObject instigator) => _instigator = instigator;
     public void Init(bool unblockable, float damage)
     {
         _damage = damage;
@@ -76,7 +79,8 @@ public class Projectile : MonoBehaviour
     {
         if (other.TryGetComponent<Player>(out Player player))
         {
-            player.TakeDamage(_damage);
+            var killer = _instigator != null ? _instigator : gameObject;
+            player.TakeDamage(_damage, killer);
             Destroy(gameObject);
         }
     }
