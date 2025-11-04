@@ -1,6 +1,7 @@
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Unity.AI.Navigation;
 
 
 
@@ -26,6 +27,16 @@ public class CreateMap : MonoBehaviour
     [SerializeField] GameObject enemy_melee;
 
     [SerializeField] GameObject enemy_range;
+
+    [SerializeField] GameObject player;
+
+    [SerializeField] NavMeshSurface surface;
+    
+    void Awake()
+    {
+        surface = GetComponent<NavMeshSurface>();
+    }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -41,8 +52,10 @@ public class CreateMap : MonoBehaviour
         }
         GenerateMap();
         AddFurnishing();
+        AddPlayer();
+        BakeNavMesh();
         AddEnemies();
-        
+
     }
 
     void GenerateMap()
@@ -148,9 +161,31 @@ public class CreateMap : MonoBehaviour
             }
         }
     }
-    
+
     void AddPlayer()
     {
-        
+        for (int x = 1; x < sizeX - 1; x++)
+        {
+            for (int y = 1; y < sizeY - 1; y++)
+            {
+                var place = Random.Range(1, 21);
+                if (place == 20)
+                {
+                    if (tilemapGround.GetTile(new Vector3Int(x, y, 0)) != null)
+                    {
+                        Vector3 worldPos = tilemapGround.GetCellCenterWorld(new Vector3Int(x, y, 0));
+                        Instantiate(player, worldPos, Quaternion.identity);
+
+                        return;
+                    }
+                }
+            }
+
+        }
+    }
+
+    void BakeNavMesh()
+    {
+        surface.BuildNavMesh();
     }
 }
