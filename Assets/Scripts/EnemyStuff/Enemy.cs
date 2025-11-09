@@ -22,6 +22,15 @@ public class Enemy : MonoBehaviour
         HomePosition = transform.position;
     }
 
+    private void Update()
+    {
+        // For combat back
+        /*if (_player == null)
+        {
+            _player = GameObject.FindWithTag("Player");
+        }*/
+    }
+
     public void TakeDamage(float damage)
     {
         _currentHealth -= damage;
