@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 using static Unity.Collections.AllocatorManager;
 using static UnityEngine.Rendering.DebugUI;
 
-public class MapGenerator : MonoBehaviour
+public class MapGeneratorElites : MonoBehaviour
 {
     [Header("Geometry")]
     [SerializeField] Vector3Int mapSize;
@@ -28,7 +28,7 @@ public class MapGenerator : MonoBehaviour
 
 
     [Header("Controls")]
-    public InputActionReference placeObjects;   
+    public InputActionReference placeObjects;
     public InputActionReference remakeMap;
     public InputActionReference mutateMap;
     public InputActionReference mutatePlacements;
@@ -43,15 +43,16 @@ public class MapGenerator : MonoBehaviour
 
     MapInstantiator mapInstantiator;
 
-    void Awake()
-    {
-        mapInstantiator = FindFirstObjectByType<MapInstantiator>();
-    }
-    void Start()
+   //just so i dont have two maps genereated
+    public void GenerateFullMap()
     {
         enemies = new List<(Vector2Int, int)>();
         budget = startingBudget;
-        RemakeMap();
+        maxAmountFurnishing = Mathf.Max(0, maxAmountFurnishing); // just to be safe
+
+        makeRoomGeometry();
+        placeEnemies();
+        placeFurnishing();
     }
 
     void OnEnable()
@@ -421,7 +422,7 @@ public class MapGenerator : MonoBehaviour
         // Add new room
         int roomW = Random.Range(2, Mathf.Min(maxRoomSize.x, outlineSize.x) + 1);
         int roomH = Random.Range(2, Mathf.Min(maxRoomSize.y, outlineSize.y) + 1);
-        Vector3Int roomSize = new Vector3Int(roomW, roomH, 0);  
+        Vector3Int roomSize = new Vector3Int(roomW, roomH, 0);
         Vector3Int roomPlacement = new Vector3Int(
             Random.Range(outlinePlacement.x, outlinePlacement.x + outlineSize.x - roomSize.x + 1),
             Random.Range(outlinePlacement.y, outlinePlacement.y + outlineSize.y - roomSize.y + 1),
