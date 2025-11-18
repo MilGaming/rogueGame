@@ -100,6 +100,7 @@ public class MapGenerator : MonoBehaviour
             furnishing = new List<(Vector2Int, int)>(),
             budget = startingBudget,
             furnishingBudget = maxAmountFurnishing,
+            exitPos = new Vector2Int(-1, -1) //apperently it is important taht it is -1 -1???
         };
         currentMap = makeRoomGeometry(currentMap);
         mapInstantiator.makeMap(currentMap.mapArray);
@@ -197,6 +198,7 @@ public class MapGenerator : MonoBehaviour
 
         map = RemoveDisconnectedFloors(map);
         AddWallsAroundFloors(map);
+        map = PlaceExit(map);
         return map;
     }
 
@@ -415,8 +417,77 @@ public class MapGenerator : MonoBehaviour
                 map.playerStartPos = new Vector2Int(playerPosX, playerPosY);
             }
         }
+
         return map;
     }
+
+    // place exit
+    MapInfo PlaceExit(MapInfo map)
+    {
+        List<Vector2Int> candidates = new List<Vector2Int>();
+
+        int playerRoomIndex = -1;
+        for (int i = 0; i < map.rooms.Count; i++)
+        {
+            var r = map.rooms[i];
+            if (map.playerStartPos.x >= r.placement.x &&
+                map.playerStartPos.x < r.placement.x + r.size.x &&
+                map.playerStartPos.y >= r.placement.y &&
+                map.playerStartPos.y < r.placement.y + r.size.y)
+            {
+                playerRoomIndex = i;
+                break;
+            }
+        }
+
+        int GetRoomIndexForFloor(int fx, int fy)
+        {
+            for (int i = 0; i < map.rooms.Count; i++)
+            {
+                var r = map.rooms[i];
+                if (fx >= r.placement.x &&
+                    fx < r.placement.x + r.size.x &&
+                    fy >= r.placement.y &&
+                    fy < r.placement.y + r.size.y)
+                    return i;
+            }
+            return -1;
+        }
+
+        for (int x = 0; x < mapSize.x; x++)
+        {
+            for (int y = 0; y < mapSize.y; y++)
+            {
+                if (map.mapArray[x, y] != 2) continue; // only walls
+
+                var neighbours = new Vector2Int[] {
+                new Vector2Int(x + 1, y),
+                new Vector2Int(x - 1, y),
+                new Vector2Int(x, y + 1),
+                new Vector2Int(x, y - 1)
+            };
+
+                foreach (var n in neighbours)
+                {
+                    if (n.x < 0 || n.y < 0 || n.x >= mapSize.x || n.y >= mapSize.y) continue;
+                    if (map.mapArray[n.x, n.y] != 1) continue; // must border a floor
+
+                    int roomIndex = GetRoomIndexForFloor(n.x, n.y);
+                    if (roomIndex != -1 && roomIndex != playerRoomIndex)
+                    {
+                        candidates.Add(new Vector2Int(x, y));
+                        break;
+                    }
+                }
+            }
+        }
+
+        var chosen = candidates[Random.Range(0, candidates.Count)];
+        map.mapArray[chosen.x, chosen.y] = 8; // exit code
+        map.exitPos = chosen;
+        return map;
+    }
+
 
     // Go through tiles, all floors we add walls to empty neighbors
     MapInfo AddWallsAroundFloors(MapInfo map)
@@ -620,6 +691,7 @@ public class MapGenerator : MonoBehaviour
         }
         map = RemoveDisconnectedFloors(map);
         map = AddWallsAroundFloors(map);
+        map = PlaceExit(map);
 
         // Remove enemies that are no longer valid, and place new ones
         map = ValidateEnemiesAgainstMap(map);
@@ -707,4 +779,5 @@ public struct MapInfo
         public int budget;
         public List<(Vector2Int placement, int type)> furnishing;
         public int furnishingBudget;
-    }
+        public Vector2Int exitPos;
+}
