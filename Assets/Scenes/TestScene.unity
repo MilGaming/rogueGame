@@ -434,10 +434,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapGenerator
   mapSize: {x: 100, y: 100, z: 0}
-  maxOutLineSize: {x: 60, y: 60, z: 0}
-  maxAmountOfOutlines: 0
-  maxRoomSize: {x: 15, y: 15, z: 0}
-  maxRoomAmount: 30
+  maxRoomSize: {x: 20, y: 20, z: 0}
+  maxRoomAmount: 50
   amountOfEnemyTypes: 2
   startingBudget: 6
   minDistanceToPlayer: 10
