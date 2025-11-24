@@ -1,7 +1,8 @@
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
+
 using UnityEngine.InputSystem;
 
 public class MapGenerator : MonoBehaviour
@@ -38,6 +39,7 @@ public class MapGenerator : MonoBehaviour
     }
     void Start()
     {
+        //Debug.Log("Helo?");
         mapInstantiator = FindFirstObjectByType<MapInstantiator>();
         RemakeMap();
     }
@@ -76,13 +78,15 @@ public class MapGenerator : MonoBehaviour
             distFromPlayerToEnd = 0,
         };
         currentMap = makeRoomGeometry(currentMap);
-        mapInstantiator.makeMap(currentMap.mapArray);
+        currentMap = PlaceObjects(currentMap);
+        //mapInstantiator.makeMap(currentMap.mapArray);
     }
 
     public MapInfo MutateMap(MapInfo map)
     {
         map = mutateGeometry(map);
-        mapInstantiator.makeMap(map.mapArray);
+        map = PlaceObjects(map);
+        //mapInstantiator.makeMap(map.mapArray);
         return map;
     }
 
@@ -154,7 +158,6 @@ public class MapGenerator : MonoBehaviour
             // now this becomes the previous
             previousConnectionTile = connectionTile;
         }
-
         // compute shortest path once the map geometry is ready
         if (map.playerStartPos.HasValue && map.endPos.HasValue)
         {
@@ -165,7 +168,6 @@ public class MapGenerator : MonoBehaviour
                 Debug.LogWarning("No path found between player start and end!");
             }
         }
-
         return map;
     }
 
