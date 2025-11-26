@@ -53,7 +53,7 @@ public class MapGenerator : MonoBehaviour
         mutatePlacements.action.Enable();
         mutateContent.action.Enable();
         placeObjects.action.performed += ctx => { currentMap = PlaceObjects(currentMap); };
-        remakeMap.action.performed += ctx => RemakeMap();
+        remakeMap.action.performed += ctx => { currentMap = MakeMap(); };
         mutateMap.action.performed += ctx => { currentMap = MutateMap(currentMap); };
         mutatePlacements.action.performed += ctx => { currentMap = MutatePlacements(currentMap); };
         mutateContent.action.performed += ctx => { currentMap = MutateContent(currentMap); };
@@ -67,9 +67,9 @@ public class MapGenerator : MonoBehaviour
         return map;
     }
 
-    public void RemakeMap()
+    public MapInfo MakeMap()
     {
-        currentMap = new MapInfo
+        MapInfo newMap = new MapInfo
         {
             enemies = new List<(Vector2Int, int)>(),
             furnishing = new List<(Vector2Int, int)>(),
@@ -78,30 +78,31 @@ public class MapGenerator : MonoBehaviour
             furnishingBudget = maxAmountFurnishing,
             distFromPlayerToEnd = 0,
         };
-        currentMap = makeRoomGeometry(currentMap);
-        currentMap = PlaceObjects(currentMap);
+        return makeRoomGeometry(newMap);
+        //currentMap = PlaceObjects(currentMap);
         //mapInstantiator.makeMap(currentMap.mapArray);
     }
 
-    public MapInfo MutateMap(MapInfo map)
+    MapInfo MutateMap(MapInfo map)
     {
         map = mutateGeometry(map);
-        map = PlaceObjects(map);
+        //currentMap = map;
+        //map = PlaceObjects(map);
         //mapInstantiator.makeMap(map.mapArray);
         return map;
     }
 
-    public MapInfo MutateContent(MapInfo map)
+    MapInfo MutateContent(MapInfo map)
     {
         map = mutateFurnishing(map);
-        mapInstantiator.makeMap(map.mapArray);
+        //mapInstantiator.makeMap(map.mapArray);
         return map;
     }
 
-    public MapInfo MutatePlacements(MapInfo map)
+    MapInfo MutatePlacements(MapInfo map)
     {
         map = mutateEnemies(map);
-        mapInstantiator.makeMap(map.mapArray);
+        //mapInstantiator.makeMap(map.mapArray);
         return map;
     }
 
@@ -243,7 +244,7 @@ public class MapGenerator : MonoBehaviour
     }
 
 
-    MapInfo placeEnemies(MapInfo map)
+    public MapInfo placeEnemies(MapInfo map)
     {
         // collect candidate floor tiles
         List<Vector2Int> candidates = new List<Vector2Int>(map.floorTiles);
@@ -291,7 +292,7 @@ public class MapGenerator : MonoBehaviour
         return map;
     }
 
-    MapInfo placeFurnishing(MapInfo map)
+    public MapInfo placeFurnishing(MapInfo map)
     {
         // collect candidate floor tiles
         List<Vector2Int> candidates = new List<Vector2Int>(map.floorTiles);
@@ -380,7 +381,7 @@ public class MapGenerator : MonoBehaviour
     }
 
 
-    MapInfo mutateGeometry(MapInfo map)
+    public MapInfo mutateGeometry(MapInfo map)
     {
         // if no rooms, must add
         int totalRooms = 0;
@@ -420,7 +421,7 @@ public class MapGenerator : MonoBehaviour
         return map;
     }
 
-    MapInfo mutateEnemies(MapInfo map)
+    public MapInfo mutateEnemies(MapInfo map)
     {
         // no enemies to mutate
         if (map.enemies == null || map.enemies.Count == 0)
@@ -441,7 +442,7 @@ public class MapGenerator : MonoBehaviour
     }
 
 
-    MapInfo mutateFurnishing(MapInfo map)
+    public MapInfo mutateFurnishing(MapInfo map)
     {
         // no furnishing to mutate
         if (map.furnishing == null || map.furnishing.Count == 0)
