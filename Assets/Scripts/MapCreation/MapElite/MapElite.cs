@@ -187,7 +187,7 @@ public class MapElite : MonoBehaviour
             var key = candidate.CombinedBehavior;
 
             candidate.geoFitness = FitnessFunctions.GetGeometryFitness(candidate, (50, 10000, 0.35f), (0.5f, 2f, 0.1f), (1000, 3000, 0.35f), (2, 40, 0.1f), (0f, 0.15f, 0.1f));
-            candidate.furnFitness = FitnessFunctions.LootAtEndFitness(candidate.mapData);
+            candidate.furnFitness = FitnessFunctions.FurnishingFitnessTotal(candidate.mapData, 0.34f, 0.33f, 0.33f);
             candidate.enemFitness = FitnessFunctions.EnemyFitnessTotal(candidate.mapData, 0.5f, 0.5f);
 
             if (!combinedArchive.ContainsKey(key) || combinedArchive[key].CombinedFitness < candidate.CombinedFitness)

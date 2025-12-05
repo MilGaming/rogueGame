@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-JSON_FILENAME = "archive_maps.json"
+JSON_FILENAME = "combArchive_maps.json"
 OUT_IMG_PREFIX = "map_"
 BASE_FONT_SIZE = 18
 BANNER_MARGIN = 8

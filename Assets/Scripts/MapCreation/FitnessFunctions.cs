@@ -157,6 +157,29 @@ public class FitnessFunctions : MonoBehaviour
         return scoreNotStart * EneNotStartWeight + scoreWallCloseness * EneCloseWallWeight;
     }
 
+    public static float FurnishingFitnessTotal(MapInfo map, float lootEndWeight, float lootDistWeight, float trapPlacementWeight)
+    {
+        float scoreLootEnd = LootAtEndFitness(map);
+        float scoreTotalLootDist = 0;
+        float scoreTotalTrapPlacement = 0;
+        
+        foreach (var component in map.components)
+        {
+            float scoreLootDist = 0;
+            float trapPlacementScore = 0;
+            scoreLootDist += LootPlacementFitnessRoom(component, map);
+            foreach (var room in component.rooms){
+                trapPlacementScore += TrapPlacementScoreRoom(room, map.mapArray);
+            }
+            scoreLootDist /= component.rooms.Count;
+            trapPlacementScore /= component.rooms.Count;
+            scoreTotalLootDist += scoreLootDist;
+            scoreTotalTrapPlacement += trapPlacementScore;
+        }
+        scoreTotalLootDist = ScoreInterval(scoreTotalLootDist/map.components.Count, 1, 1); 
+        scoreTotalTrapPlacement /= map.components.Count;
+        return scoreLootEnd * lootEndWeight + scoreTotalLootDist * lootDistWeight + scoreTotalTrapPlacement * trapPlacementWeight;
+    }
     public static float RoomFitnessTotal(MapInfo map)
     {
         float scoreTotal = 0;
@@ -194,7 +217,7 @@ public class FitnessFunctions : MonoBehaviour
             }
         }
         distance = distance/map.furnishing.Count;
-        return 1/map.furnishing.Count * distance;
+        return ScoreInterval(distance, 6.0f, 200.0f);;
     }
 
     public static float EnemyNotAtStartFitness(MapInfo map)
@@ -289,28 +312,22 @@ public class FitnessFunctions : MonoBehaviour
         return (score, checkedEnemies); 
     }
 
-    public float LootPlacementFitnessRoom(Room room, MapInfo map)
+    public static float LootPlacementFitnessRoom(FloorComponent component, MapInfo map)
     {
-        float maxRoomScore = map.furnishing.Count/map.components.Count + 2.0f;
         float score = 0;
-        for (int a = room.XMin; a <= room.XMax; a++)
+        foreach (var furnish in map.furnishing)
         {
-            for (int b = room.YMin; b <=room.YMax; b++)
-            {
-                if (map.mapArray[a, b] == 3 || map.mapArray[a, b] == 4)
+                if (component.ContainsTile(furnish.placement))
                 {
-                    score += map.furnishing.Count/map.components.Count + 2.0f;
+                    score += 1;
                 }
-                if (score >= maxRoomScore)
-                {
-                    return maxRoomScore;
-                }
-            }
-            } 
-        return score;
+        }
+        float min = map.furnishing.Count/map.components.Count * 0.85f;
+        float max =  map.furnishing.Count/map.components.Count * 1.15f;
+        return ScoreInterval(score, min, max);
     }
 
-    float TrapPlacementScoreRoom(Room room, int[,] mapArray)
+    public static float TrapPlacementScoreRoom(Room room, int[,] mapArray)
     {
         bool hasTrap = false;
         bool hasEnemy = false;
