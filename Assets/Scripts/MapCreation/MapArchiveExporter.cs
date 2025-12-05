@@ -25,7 +25,7 @@ public static class MapArchiveExporter
         public int roomsCount;
         public int enemiesCount;
         public int furnishingCount;
-        public int budget;
+        public int enemyBudget;
         public int furnishingBudget;
         public int walkableTiles;
         public int wallTiles;
@@ -67,7 +67,7 @@ public static class MapArchiveExporter
                 roomsCount = map.components?.Count ?? 0,
                 enemiesCount = map.enemies?.Count ?? 0,
                 furnishingCount = map.furnishing?.Count ?? 0,
-                budget = map.enemiesBudget,
+                enemyBudget = map.enemyBudget,
                 furnishingBudget = map.furnishingBudget,
                 walkableTiles = map.floorTiles.Count,
                 // wallTiles = ... if you have it
