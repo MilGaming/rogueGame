@@ -261,7 +261,6 @@ public class MapGenerator : MonoBehaviour
     {
         // collect candidate floor tiles
         List<Vector2Int> candidates = new List<Vector2Int>(map.floorTiles);
-        Debug.Log("Enemy Budget: " + map.enemyBudget);
         // shuffle candidates
         for (int i = 0; i < candidates.Count; i++)
         {
@@ -401,7 +400,7 @@ public class MapGenerator : MonoBehaviour
         // randomly decide to add or remove a room
         int maxMutations = Mathf.Max(1, Mathf.RoundToInt(totalRooms * 0.10f));
 
-        int amountOfMutations = Random.Range(1, maxMutations);
+        int amountOfMutations = UnityEngine.Random.Range(1, maxMutations);
 
         for (int i = 0; i < amountOfMutations; i++)
         {
