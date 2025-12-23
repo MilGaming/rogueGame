@@ -33,5 +33,6 @@ public class Player : MonoBehaviour
     public void Heal(float health)
     {
         _health += health;
+        _ui.updateHealth(_health);
     }
 }
