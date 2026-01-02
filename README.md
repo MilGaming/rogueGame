@@ -1,3 +1,31 @@
 # rogueGame
 
-She can’t read. According to her lore, the book itself contains text necessary to produce magic, but since it’s also sentient, Yuumi doesn’t even need to be literate to do jack shit because the book just does everything itself anyways. She literally could not read the title to the book itself and just gave up and called it “Book” as it’s name. Doesn’t she feel absolutely fucking stupid knowing she’s always so close to a book she can’t even read? Like, everybody she’s attached to is obviously gonna assume she isn’t some illiterate idiot carrying a big book but no that’s exactly what it is. Doesn’t she feel embarrassed at all? Any shame whatsoever? Stupid ass cat. 
+To create new maps go into the MapEliteTest.scene (in scenes) and give it the parameters you want in the grid object under the Map-Elite script. The rest should not be changed. 
+To change which MAP-elite algorithm should be used, open up MapElite.cs (under MapCreation/MapElite) find the start function and out/in comment:
+RunMapElitesGeometry();
+MapArchiveExporter.ExportArchiveToJson(geoArchive.Values, "geoArchive_maps.json");
+RunMapElitesEnemies();
+MapArchiveExporter.ExportArchiveToJson(enemArchive.Values, "enemArchive_maps.json");
+RunMapElitesFurnishing();
+MapArchiveExporter.ExportArchiveToJson(furnArchive.Values, "furnArchive_maps.json");
+
+For the hierarchical version.
+
+For the combined version out/in comment:
+RunMapElitesCombined();
+MapArchiveExporter.ExportArchiveToJson(combinedArchive.Values, "combArchive_maps.json");
+
+Once everything has been setup to preference just press play in the scene (MapEliteTest.scene).
+
+To play through maps, go into the GamePlay.scne (in scenes). 
+Add the archive(s) you want to use to the folder Assets/StreamingAssets.
+Either furnArchive_maps or the combArchive_maps json files.
+To select which one to use open up the LevelManager.cs under Assets/MapCreation.
+Find the start function.
+For combined maps out/in comment:
+string path = Path.Combine(Application.streamingAssetsPath, "combArchive_maps.json");
+
+For hierarchical amps out/in comment:
+string path = Path.Combine(Application.streamingAssetsPath, "furnArchive_maps.json");
+
+Once everything has been setup to preference just press play in the scene (GamePlay.scene).
