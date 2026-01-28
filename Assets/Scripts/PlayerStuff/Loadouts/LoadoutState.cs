@@ -2,8 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
-using static Unity.Collections.AllocatorManager;
-// Has data that is need across all loadouts
 public class LoadoutState : MonoBehaviour
 {
 
@@ -16,13 +14,17 @@ public class LoadoutState : MonoBehaviour
     bool blockedMovement = false;
     bool blockedActions = false;
 
-    private float heavyDashResource = 100f;
-    private float defResource = 100f;
-
-    private float chargeFinishTime;
+    private float dashPressTime;
+    [SerializeField] private float heavyDashHoldTime = 0.4f;
 
     private LoadoutBase loadout;
     private Vector2 mousePos;
+
+    private float nextHeavyDashTime;
+    private float nextDefTime;
+    private float nextDashTime;
+
+
 
 
     [Header("Input (assign from your Controls asset)")]
@@ -47,7 +49,9 @@ public class LoadoutState : MonoBehaviour
     void OnEnable()
     {
         attack.action.performed += OnAttack;
-        dash.action.performed += OnDash;
+        dash.action.started += OnDashStarted;
+        dash.action.canceled += OnDashCanceled;
+        def.action.performed += OnDefense;
 
         move.action.Enable();
         point.action.Enable();
@@ -60,7 +64,9 @@ public class LoadoutState : MonoBehaviour
     void OnDisable()
     {
         attack.action.performed -= OnAttack;
-        dash.action.performed -= OnDash;
+        dash.action.started -= OnDashStarted;
+        dash.action.canceled -= OnDashCanceled;
+        def.action.performed -= OnDefense;
 
         move.action.Disable();
         point.action.Disable();
@@ -82,34 +88,83 @@ public class LoadoutState : MonoBehaviour
 
     IEnumerator DoAttack(bool heavy)
     {
-        if (heavy) yield return loadout.heavyAttack(mousePos);
-        else yield return loadout.lightAttack(mousePos);
+        if (heavy) yield return loadout.HeavyAttack(mousePos);
+        else yield return loadout.LightAttack(mousePos);
 
         blockedActions = false;
     }
 
-    void OnDash(InputAction.CallbackContext ctx)
+    void OnDashStarted(InputAction.CallbackContext ctx)
     {
         if (blockedActions) return;
-        blockedActions = true;
 
-        if (ctx.interaction is HoldInteraction)
-            StartCoroutine(DoDash(true));
-        else if (ctx.interaction is TapInteraction)
-            StartCoroutine(DoDash(false));
+        dashPressTime = Time.time;
+
+        blockedActions = true;
+        blockedMovement = true;
+        vel = Vector2.zero;
     }
+
+    void OnDashCanceled(InputAction.CallbackContext ctx)
+    {
+        bool heavy = (Time.time - dashPressTime) >= heavyDashHoldTime;
+        StartCoroutine(DoDash(heavy));
+    }
+
 
     IEnumerator DoDash(bool heavy)
     {
-        if (heavy) yield return loadout.heavyDash(vel);
-        else yield return loadout.lightDash(vel);
+        if (heavy)
+        {
+            if (Time.time < nextHeavyDashTime)
+            {
+                blockedMovement = false;
+                blockedActions = false;
+                yield break;
+            }
 
-        blockedActions = false;
+            nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
+            yield return loadout.HeavyDash(vel, transform);
+
+            blockedMovement = false;
+            blockedActions = false;
+        }
+        else
+        {
+            if (Time.time < nextDashTime)
+            {
+                blockedMovement = false; 
+                blockedActions = false;
+                yield break;
+            }
+
+            nextDashTime = Time.time + loadout.getLightDashCD();
+            yield return loadout.LightDash(vel, transform);
+            blockedMovement = false;
+            blockedActions = false;
+        }
     }
 
 
+
+    void OnDefense(InputAction.CallbackContext ctx)
+    {
+        if (blockedActions || Time.time < nextDefTime) return;
+        blockedActions = true;
+
+        DoDefense();
+    }
+
+    IEnumerator DoDefense()
+    {
+        nextDefTime = Time.time + loadout.getDefenseCD();
+        yield return loadout.Defense();
+        blockedActions = false;
+    }
+
     private void Update()
     {
+
         // Update Mouse Pos
         Vector2 mouseScreen = Mouse.current.position.ReadValue();
         Vector3 mouseWorld = cam.ScreenToWorldPoint(mouseScreen);
@@ -117,15 +172,13 @@ public class LoadoutState : MonoBehaviour
         mousePos = mouseWorld;
 
         // Move player
-        if (blockedMovement) return;
         Vector2 input = move.action.ReadValue<Vector2>();
         if (input.sqrMagnitude > 1f) input.Normalize();
         Vector2 targetVel = input * maxSpeed;
         float rate = (input.sqrMagnitude > 0.0001f) ? accel : decel;
         vel = Vector2.MoveTowards(vel, targetVel, rate * Time.deltaTime);
+        if (blockedMovement) return;
         transform.position += (Vector3)(vel * Time.deltaTime);
-
-
     }
 
 
