@@ -175,23 +175,20 @@ public class LoadoutState : MonoBehaviour
                 if (Time.time < nextHeavyDashTime)
                     yield break;
 
-            nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
-            yield return loadout.HeavyDash(vel, transform, mousePos);
- 
+                nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
+                yield return loadout.HeavyDash(vel, transform, mousePos);
             }
             else
-            
             {
                 if (Time.time < nextDashTime)
-                {
-                    blockedMovement = false; 
-                    blockedActions = false;
                     yield break;
-                }
-            }
 
-            nextDashTime = Time.time + loadout.getLightDashCD();
-            yield return loadout.LightDash(vel, transform, mousePos);
+                nextDashTime = Time.time + loadout.getLightDashCD();
+                yield return loadout.LightDash(vel, transform, mousePos);
+            }
+        }
+        finally
+        {
             blockedMovement = false;
             blockedActions = false;
         }
