@@ -9,6 +9,7 @@ TagManager:
   - Enemy
   - Canvas
   - Sword
+  - HeavySword
   layers:
   - Default
   - TransparentFX
