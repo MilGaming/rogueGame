@@ -2,13 +2,13 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class LoadoutBase : MonoBehaviour
+public class LoadoutBase
 {
 
     [Header("Left Click")]
     protected float _lightWindup = 0.1f;
     protected float _lightDamage = 10f;
-    protected float _heavyDamage = 30f;
+    protected float _heavyDamage = 20f;
     protected float _attackSpeed = 0.5f;
 
     [Header("Right Click")]
@@ -18,6 +18,13 @@ public class LoadoutBase : MonoBehaviour
     [Header("Space")]
     protected float _heavyDashCD = 5f;
     protected float _lightDashCD = 1f;
+
+    protected Player _player;
+
+    public LoadoutBase(Player player)
+    {
+        _player = player;
+    }
 
     public virtual IEnumerator LightAttack(Vector2 mousePos)
     {
