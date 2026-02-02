@@ -5,6 +5,8 @@ using UnityEngine.InputSystem.Interactions;
 public class LoadoutState : MonoBehaviour
 {
 
+    [SerializeField] private Player player;
+
     [Header("Movement")]
     public float maxSpeed = 8f;
     public float accel = 100f;
@@ -48,7 +50,7 @@ public class LoadoutState : MonoBehaviour
     }
     void Start()
     {
-        loadout = new LoadoutBase();
+        loadout = new LoadoutBase(player);
     }
 
     void OnEnable()
@@ -103,12 +105,12 @@ public class LoadoutState : MonoBehaviour
 
     void OnLoadout2(InputAction.CallbackContext ctx)
     {
-        loadout = new SwordAndShield();
+        loadout = new SwordAndShield(player);
     }
 
     void OnLoadout3(InputAction.CallbackContext ctx)
     {
-        //loadout = new TwoSword();
+        loadout = new DualSwords(player);
     }
 
     void OnAttack(InputAction.CallbackContext ctx)
@@ -176,7 +178,7 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
-                yield return loadout.HeavyDash(vel, transform, mousePos);
+                yield return loadout.HeavyDash(transform, mousePos);
             }
             else
             {
