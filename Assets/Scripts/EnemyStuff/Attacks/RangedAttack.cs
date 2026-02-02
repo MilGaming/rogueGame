@@ -21,4 +21,5 @@ public class RangedAttack : IAttack
         proj.Init(false, _damage);
         _nextReadyTime = Time.time + _attackSpeed;
     }
+
 }
