@@ -1,20 +1,23 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
+using UnityEngine.UIElements;
+
 public class LoadoutState : MonoBehaviour
 {
 
     [SerializeField] private Player player;
+
+    [SerializeField] private PlayerAnimDriver anim;
 
     private enum ActionType { AttackLight, AttackHeavy, DashLight, DashHeavy, Defense }
 
     private struct BufferedAction
     {
         public ActionType type;
-        public Vector2 mousePos;
-        public Vector2 vel;     // for dash light
         public float time;      // when it was queued
     }
 
@@ -32,9 +35,10 @@ public class LoadoutState : MonoBehaviour
     Vector2 vel;
     bool blockedMovement = false;
     bool blockedActions = false;
+    bool doAnimationAnyway = false;
 
 
-
+    private float currentSpeed;
     private float dashPressTime;
     private bool dashHeld;
     [SerializeField] private float heavyDashHoldTime = 0.4f;
@@ -45,6 +49,7 @@ public class LoadoutState : MonoBehaviour
     private float nextHeavyDashTime;
     private float nextDefTime;
     private float nextDashTime;
+    private float nextAttackTime;
 
 
     [Header("Input (assign from your Controls asset)")]
@@ -68,6 +73,7 @@ public class LoadoutState : MonoBehaviour
     void Start()
     {
         loadout = new LoadoutBase(player);
+        currentSpeed = maxSpeed;
     }
 
     private void EnqueueAction(BufferedAction a)
@@ -99,27 +105,38 @@ public class LoadoutState : MonoBehaviour
             switch (a.type)
             {
                 case ActionType.AttackLight:
-                    yield return loadout.LightAttack(a.mousePos);
+                    if (Time.time < nextAttackTime)
+                        break;
+                    yield return RunAction(loadout.GetLightAttackDuration(), loadout.LightAttack(getMouseDir()), ActionType.AttackLight, "Attack");
+                    nextAttackTime = Time.time + loadout.GetAttackCooldown(false);
                     break;
 
                 case ActionType.AttackHeavy:
-                    yield return loadout.HeavyAttack(a.mousePos);
+                    if (Time.time < nextAttackTime)
+                        break;
+                    currentSpeed = maxSpeed*0.4f;
+                    yield return RunAction(loadout.GetHeavyAttackDuration(), loadout.HeavyAttack(getMouseDir()), ActionType.AttackHeavy, "Special");
+                    nextAttackTime = Time.time + loadout.GetAttackCooldown(true);
+                    currentSpeed = maxSpeed;
                     break;
 
                 case ActionType.DashLight:
-                    yield return DoDash(heavy: false, a.vel, a.mousePos);
+                    yield return DoDash(heavy: false);
                     break;
 
                 case ActionType.DashHeavy:
-                    yield return DoDash(heavy: true, a.vel, a.mousePos);
+                    yield return DoDash(heavy: true);
                     break;
 
                 case ActionType.Defense:
-                    yield return loadout.Defense(a.mousePos);
+                    doAnimationAnyway = true;
+                    yield return RunAction(loadout.GetDefenseDuration(), loadout.Defense(getMouseDir()), ActionType.Defense, "Defense");
+                    doAnimationAnyway = false;
                     break;
             }
 
             blockedActions = false;
+            updatePlayerAni();
         }
 
         actionRunner = null;
@@ -193,8 +210,6 @@ public class LoadoutState : MonoBehaviour
         EnqueueAction(new BufferedAction
         {
             type = heavy ? ActionType.AttackHeavy : ActionType.AttackLight,
-            mousePos = mousePos,
-            vel = vel,
             time = Time.time
         });
     }
@@ -231,24 +246,23 @@ public class LoadoutState : MonoBehaviour
         EnqueueAction(new BufferedAction
         {
             type = heavy ? ActionType.DashHeavy : ActionType.DashLight,
-            mousePos = mousePos,
-            vel = vel,       // snapshot velocity for light dash
             time = Time.time
         });
     }
 
 
-    IEnumerator DoDash(bool heavy, Vector2 velAtTime, Vector2 mousePosAtTime)
+    IEnumerator DoDash(bool heavy)
     {
         try
         {
+            // Cooldown checks
             if (heavy)
             {
                 if (Time.time < nextHeavyDashTime)
                     yield break;
 
                 nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
-                yield return loadout.HeavyDash(transform, mousePosAtTime);
+                yield return RunAction(loadout.GetHeavyDashDuration(), loadout.HeavyDash(getMouseDir(), transform) , ActionType.DashHeavy, "Dash");
             }
             else
             {
@@ -256,12 +270,13 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextDashTime = Time.time + loadout.getLightDashCD();
-                yield return loadout.LightDash(velAtTime, transform, mousePosAtTime);
+                yield return RunAction(loadout.GetLightDashDuration(), loadout.LightDash(vel, transform), ActionType.DashLight, "Dash");
             }
         }
         finally
         {
             blockedMovement = false;
+
         }
     }
 
@@ -269,16 +284,62 @@ public class LoadoutState : MonoBehaviour
 
     void OnDefense(InputAction.CallbackContext ctx)
     {
+        
         if (blockedActions || Time.time < nextDefTime) return;
         EnqueueAction(new BufferedAction
         {
             type = ActionType.Defense,
-            mousePos = mousePos,
-            vel = vel,
             time = Time.time
         });
         nextDefTime = Time.time + loadout.getDefenseCD();
     }
+
+    IEnumerator RunAction(float duration, IEnumerator gameplayRoutine, ActionType animToPlay, string stateTag)
+    {
+        anim.SetInAction(true);
+        Animator animator = anim.GetAnimator();
+
+        // Fire animation trigger
+        switch (animToPlay)
+        {
+            case ActionType.AttackLight: anim.TriggerAttack(); break;
+            case ActionType.AttackHeavy: anim.TriggerSpecial(); break;
+            case ActionType.DashLight: anim.TriggerDash(); break;
+            case ActionType.DashHeavy: anim.TriggerDash(); break;
+            case ActionType.Defense: anim.TriggerDefense(); break;
+        }
+
+        // Wait until the animator
+        while (animator.GetCurrentAnimatorStateInfo(0).IsTag(stateTag))
+            yield return null;
+
+        // read clip length
+        float clipLen = anim.GetCurrentClipLengthSeconds(0);
+
+        float prevSpeed = animator.speed;
+
+        if (clipLen > 0.001f && duration > 0.001f)
+            animator.speed = clipLen / duration;
+        else
+            animator.speed = 1f;
+
+        //  parallel
+        Coroutine gameplay = null;
+        if (gameplayRoutine != null)
+            gameplay = StartCoroutine(gameplayRoutine);
+
+        // Lock for your gameplay duration
+        yield return new WaitForSeconds(duration);
+        anim.SetInAction(false);
+        // Ensure gameplay finished too
+        if (gameplay != null) yield return gameplay;
+
+        animator.speed = prevSpeed;
+    }
+
+
+
+
 
     private void Update()
     {
@@ -292,13 +353,42 @@ public class LoadoutState : MonoBehaviour
         // Move player
         Vector2 input = move.action.ReadValue<Vector2>();
         if (input.sqrMagnitude > 1f) input.Normalize();
-        Vector2 targetVel = input * maxSpeed;
+        Vector2 targetVel = input * currentSpeed;
         float rate = (input.sqrMagnitude > 0.0001f) ? accel : decel;
         vel = Vector2.MoveTowards(vel, targetVel, rate * Time.deltaTime);
-        if (blockedMovement) return;
-        transform.position += (Vector3)(vel * Time.deltaTime);
+
+        if (!blockedMovement) transform.position += (Vector3)(vel * Time.deltaTime);
+
+        // Facing direction (mouse -> player)
+        if (blockedActions && !doAnimationAnyway) return;
+        updatePlayerAni();
     }
 
+    private void updatePlayerAni()
+    {
+        Vector2 lookDir = mousePos - (Vector2)transform.position;
+        if (lookDir.sqrMagnitude > 0.0001f) lookDir.Normalize();
+        else lookDir = Vector2.down;
+
+        Vector2 animVel = blockedMovement ? Vector2.zero : vel; //make shit zero so standing still works
+        // update animation
+        anim.UpdateLocomotion(lookDir, animVel);
+    }
+
+    public Vector2 getMouseDir()
+    {
+        Transform player = transform;
+        Vector2 playerPos = player.position;
+
+        Vector2 toMouse = mousePos - playerPos;
+        Vector2 dir = toMouse.sqrMagnitude > 0.000001f ? toMouse.normalized : Vector2.right;
+        return dir;
+    }
+
+    public void SetSpeed(float speedProcent)
+    {
+        currentSpeed = speedProcent * maxSpeed;
+    }
 
 
 }

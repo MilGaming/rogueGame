@@ -8,9 +8,8 @@ public class Enemy : MonoBehaviour
     [SerializeField] private NavMeshAgent _agent;
     [SerializeField] private IAttack _attack;
 
-    [SerializeField] private IProtect _protect;
-
     [SerializeField] private float maxDashLenght;
+
     private GameObject _player;
     public float _currentHealth;
     public float RemainingStunDuration { get; private set; }
@@ -38,11 +37,10 @@ public class Enemy : MonoBehaviour
     private void Update()
     {
         // For combat back
-        /*if (_player == null)
+        if (_player == null)
         {
             _player = GameObject.FindWithTag("Player");
-        }*/
-
+        }
         if (RemainingStunDuration > 0f)
         {
             RemainingStunDuration -= Time.deltaTime;
@@ -194,8 +192,6 @@ public class Enemy : MonoBehaviour
 
     public NavMeshAgent GetAgent() { return _agent; }
     public IAttack GetAttack() { return _attack; }
-
-    public IProtect GetProtect() {return _protect;}
     public GameObject GetPlayer() { return _player; }
     public float GetChaseRange() { return _data.chaseRange; }
     public float GetAttackRange() { return _data.attackRange; }
