@@ -9,8 +9,6 @@ public class SwordAndShield : LoadoutBase
     GameObject _heavySword;
     SwordHitbox _heavySwordhitbox;
 
-    float _shieldUpTime = 2f;
-
     float _stunDuration = 2f;
 
     float _heavyStunDuration = 5f;
@@ -32,12 +30,12 @@ public class SwordAndShield : LoadoutBase
 
     public override IEnumerator LightAttack(Vector2 mousePos)
     {
-        yield return MeleeAttack(mousePos, _sword, _swordhitbox, 1.3f, _lightDamage);
+        yield return MeleeAttack(mousePos, _sword, _swordhitbox, 1.3f, false);
     }
 
     public override IEnumerator HeavyAttack(Vector2 mousePos)
     {
-        yield return MeleeAttack(mousePos, _heavySword, _heavySwordhitbox, 4f, _heavyDamage);
+        yield return MeleeAttack(mousePos, _heavySword, _heavySwordhitbox, 4f, true);
     }
 
     public override IEnumerator LightDash(Vector2 direction, Transform transform, Vector2 mousePos)
@@ -58,12 +56,9 @@ public class SwordAndShield : LoadoutBase
 
     public override IEnumerator Defense(Vector2 mousePos)
     {
-        _player.SetBlocking(_shieldUpTime, getMouseDir(mousePos));
-        yield return new WaitForSeconds(_shieldUpTime);
+        _player.SetBlocking(_defenseDuration, getMouseDir(mousePos));
+        yield return new WaitForSeconds(_defenseDuration);
     }
-
-    public override float GetDefenseDuration() => _shieldUpTime;
-
 }
 
 

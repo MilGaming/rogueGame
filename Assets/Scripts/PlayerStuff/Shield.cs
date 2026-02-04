@@ -16,7 +16,7 @@ public class Shield : MonoBehaviour
         if (col) col.enabled = true;
         isBlocking = true;
 
-        float shieldDistance = 1f;
+        float shieldDistance = 0.5f;
 
         Vector2 playerPos = transform.parent.position;
 
