@@ -162,7 +162,8 @@ public class PlayerAnimDriver : MonoBehaviour
     public void TriggerDash() => animator.SetTrigger(DashHash);
     public void TriggerHurt() => animator.SetTrigger(HurtHash);
     public void TriggerDefense() => animator.SetTrigger(DefenseHash);
-
     public void SetDead(bool dead) => animator.SetBool(DeadHash, dead);
+    //set inaction to true or false
+    public void SetInAction(bool inAction) => animator.SetBool("InAction", inAction);
 
 }

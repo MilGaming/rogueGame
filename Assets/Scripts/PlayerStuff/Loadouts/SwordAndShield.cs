@@ -61,6 +61,9 @@ public class SwordAndShield : LoadoutBase
         _player.SetBlocking(_shieldUpTime, getMouseDir(mousePos));
         yield return new WaitForSeconds(_shieldUpTime);
     }
+
+    public override float GetDefenseDuration() => _shieldUpTime;
+
 }
 
 
