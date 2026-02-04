@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
+using UnityEngine.UIElements;
 public class LoadoutState : MonoBehaviour
 {
 
@@ -36,7 +37,7 @@ public class LoadoutState : MonoBehaviour
     bool blockedActions = false;
 
 
-
+    private float currentSpeed;
     private float dashPressTime;
     private bool dashHeld;
     [SerializeField] private float heavyDashHoldTime = 0.4f;
@@ -70,6 +71,7 @@ public class LoadoutState : MonoBehaviour
     void Start()
     {
         loadout = new LoadoutBase(player);
+        currentSpeed = maxSpeed;
     }
 
     private void EnqueueAction(BufferedAction a)
@@ -105,7 +107,9 @@ public class LoadoutState : MonoBehaviour
                     break;
 
                 case ActionType.AttackHeavy:
+                    currentSpeed = maxSpeed*0.4f;
                     yield return RunAction(loadout.GetHeavyAttackDuration(), loadout.HeavyAttack(mousePos), ActionType.AttackHeavy, "Special");
+                    currentSpeed = maxSpeed;
                     break;
 
                 case ActionType.DashLight:
@@ -122,6 +126,7 @@ public class LoadoutState : MonoBehaviour
             }
 
             blockedActions = false;
+            updatePlayerAni();
         }
 
         actionRunner = null;
@@ -320,12 +325,11 @@ public class LoadoutState : MonoBehaviour
 
         // Lock for your gameplay duration
         yield return new WaitForSeconds(duration);
-
+        anim.SetInAction(false);
         // Ensure gameplay finished too
         if (gameplay != null) yield return gameplay;
 
         animator.speed = prevSpeed;
-        anim.SetInAction(false);
     }
 
 
@@ -344,11 +348,19 @@ public class LoadoutState : MonoBehaviour
         // Move player
         Vector2 input = move.action.ReadValue<Vector2>();
         if (input.sqrMagnitude > 1f) input.Normalize();
-        Vector2 targetVel = input * maxSpeed;
+        Vector2 targetVel = input * currentSpeed;
         float rate = (input.sqrMagnitude > 0.0001f) ? accel : decel;
         vel = Vector2.MoveTowards(vel, targetVel, rate * Time.deltaTime);
 
+        if (!blockedMovement) transform.position += (Vector3)(vel * Time.deltaTime);
+
         // Facing direction (mouse -> player)
+        if (blockedActions) return;
+        updatePlayerAni();
+    }
+
+    private void updatePlayerAni()
+    {
         Vector2 lookDir = mousePos - (Vector2)transform.position;
         if (lookDir.sqrMagnitude > 0.0001f) lookDir.Normalize();
         else lookDir = Vector2.down;
@@ -356,12 +368,6 @@ public class LoadoutState : MonoBehaviour
         Vector2 animVel = blockedMovement ? Vector2.zero : vel; //make shit zero so standing still works
         // update animation
         anim.UpdateLocomotion(lookDir, animVel);
-
-        if (blockedMovement) return;
-        transform.position += (Vector3)(vel * Time.deltaTime);
-
-
-
     }
 
 
