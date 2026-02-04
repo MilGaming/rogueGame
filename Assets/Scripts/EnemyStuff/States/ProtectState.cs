@@ -43,7 +43,6 @@ public class ProtectState : BaseState
             Vector2 targetPos = (Vector2)chosen.transform.position + directionToPlayer * 2f;
 
             _agent.SetDestination(targetPos);
-            _enemy.StartCoroutine(_enemy.GetAttack().Attack());
         }
     }
 
@@ -62,6 +61,7 @@ public class ProtectState : BaseState
 
         if (toProtect.Count < 1)
         {
+            _agent.speed = 4f;
              return new GetInRangeState(_enemy);
         }
         return this;
