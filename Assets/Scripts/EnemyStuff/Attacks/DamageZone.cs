@@ -46,7 +46,7 @@ public class DamageZone : MonoBehaviour
 
     protected virtual void OnTriggerEnter2D(Collider2D other)
     {
-        var player = other.GetComponentInParent<Player>();
+        var player = other.GetComponent<Player>();
         if (player != null && !_hit)
         {
             player.TakeDamage(_dmg, transform.parent.gameObject);

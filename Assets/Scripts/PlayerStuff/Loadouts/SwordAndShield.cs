@@ -28,35 +28,35 @@ public class SwordAndShield : LoadoutBase
         }
     }
 
-    public override IEnumerator LightAttack(Vector2 mousePos)
+    public override IEnumerator LightAttack(Vector2 direction)
     {
-        yield return MeleeAttack(mousePos, _sword, _swordhitbox, 1.3f, false);
+        yield return MeleeAttack(direction, _sword, _swordhitbox, 1.3f, false);
     }
 
-    public override IEnumerator HeavyAttack(Vector2 mousePos)
+    public override IEnumerator HeavyAttack(Vector2 direction)
     {
-        yield return MeleeAttack(mousePos, _heavySword, _heavySwordhitbox, 4f, true);
+        yield return MeleeAttack(direction, _heavySword, _heavySwordhitbox, 4f, true);
     }
 
-    public override IEnumerator LightDash(Vector2 direction, Transform transform, Vector2 mousePos)
+    public override IEnumerator LightDash(Vector2 direction, Transform transform)
     {
         _player.SetStunning(true, _stunDuration);
-        yield return base.LightDash(direction, transform, mousePos);
+        yield return base.LightDash(direction, transform);
         _player.SetStunning(false, _stunDuration);
     }
 
-    public override IEnumerator HeavyDash(Transform transform, Vector2 mousePos)
+    public override IEnumerator HeavyDash(Vector2 direction, Transform transform)
     {
         _player.SetStunning(true, _heavyStunDuration);
         _player.SetInvinsible(true);
-        yield return base.HeavyDash(transform, mousePos);
+        yield return base.HeavyDash(direction, transform);
         _player.SetStunning(false, _heavyStunDuration);
         _player.SetInvinsible(false);
     }
 
-    public override IEnumerator Defense(Vector2 mousePos)
+    public override IEnumerator Defense(Vector2 direction)
     {
-        _player.SetBlocking(_defenseDuration, getMouseDir(mousePos));
+        _player.SetBlocking(_defenseDuration, direction);
         yield return new WaitForSeconds(_defenseDuration);
     }
 }
