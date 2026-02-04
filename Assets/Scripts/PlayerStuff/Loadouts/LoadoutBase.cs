@@ -6,7 +6,12 @@ public class LoadoutBase
 {
 
     [Header("Left Click")]
-    protected float _lightWindup = 0.1f;
+    protected float _windupProcent = 0.4f;
+    protected float _lightAttackDuration = 0.3f;
+    protected float _heavyAttackDuration = 1f;
+    protected float _defenseDuration = 2f;
+    protected float _lightDashDuration = 0.15f;
+    protected float _HeavyDashDuration = 0.2f;
     protected float _lightDamage = 10f;
     protected float _heavyDamage = 20f;
     protected float _attackSpeed = 0.5f;
@@ -28,8 +33,7 @@ public class LoadoutBase
 
     public virtual IEnumerator LightAttack(Vector2 mousePos)
     {
-        yield return new WaitForSeconds(_lightWindup);
-
+        yield return new WaitForSeconds(GetLightAttackDuration());
         Debug.Log("Do light attack");
         yield return new WaitForSeconds(_attackSpeed);
     }
@@ -100,11 +104,15 @@ public class LoadoutBase
     }
 
     //override in subclasses
-    public virtual float GetLightAttackDuration() => _lightWindup + _attackSpeed;
-    public virtual float GetHeavyAttackDuration() => _lightWindup + _attackSpeed + 3f; //i dont get heavy attack
-    public virtual float GetDefenseDuration() => 2f; //temp change
-    public virtual float GetLightDashDuration() => 0.15f;
-    public virtual float GetHeavyDashDuration() => 0.20f;
+    public float GetLightAttackDuration() => _lightAttackDuration;
+    public float GetHeavyAttackDuration() => _heavyAttackDuration;
+
+    public float GetLightAttackWindup() => _lightAttackDuration * _windupProcent;
+
+    public float GetHeavyAttackWindup() => _heavyAttackDuration * _windupProcent;
+    public virtual float GetDefenseDuration() => _defenseDuration;
+    public virtual float GetLightDashDuration() => _lightDashDuration;
+    public virtual float GetHeavyDashDuration() => _HeavyDashDuration;
 
     protected Vector2 getMouseDir(Vector2 mousePos)
     {
@@ -116,7 +124,7 @@ public class LoadoutBase
         return dir;
     }
 
-    protected IEnumerator MeleeAttack(Vector2 mousePos, GameObject mySword, SwordHitbox mySwordHitbox, float distance, float damage)
+    protected IEnumerator MeleeAttack(Vector2 mousePos, GameObject mySword, SwordHitbox mySwordHitbox, float distance, bool isHeavy)
     {
         if (mySwordHitbox == null) yield break;
 
@@ -130,10 +138,17 @@ public class LoadoutBase
         mySword.transform.position = pos;
 
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        mySword.transform.rotation = Quaternion.Euler(0f, 0f, angle + 90f);
+        mySword.transform.rotation = Quaternion.Euler(0f, 0f, angle-90f);
 
-        // short active window
-        mySwordHitbox.Activate(damage, 0.1f);
+        if (isHeavy) {
+            yield return new WaitForSeconds(GetHeavyAttackWindup());
+            mySwordHitbox.Activate(_heavyDamage, _heavyAttackDuration - GetHeavyAttackWindup());
+        }
+        else
+        {
+            yield return new WaitForSeconds(GetLightAttackWindup());
+            mySwordHitbox.Activate(_lightDamage, _lightAttackDuration - GetLightAttackWindup());
+        }
 
         yield return new WaitForSeconds(_attackSpeed);
     }

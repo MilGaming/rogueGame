@@ -17,6 +17,7 @@ public GameObject DefenseProjectile;
         DefenseProjectile = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<KnockBackDefense>().gameObject;
         _attackSpeed = 0.5f;
         _lightDamage = 5f;
+        _defenseDuration = 0.1f;
     }
 
     public override IEnumerator LightAttack(Vector2 mousePos)

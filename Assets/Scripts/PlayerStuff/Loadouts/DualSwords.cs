@@ -10,9 +10,8 @@ public class DualSwords : LoadoutBase
     GameObject _aoeSword;
     SwordHitbox _aoeSwordhitbox;
 
-    float _heavyDashDamage = 20f;
+    float _heavyDashDamage = 30f;
 
-    float _parryTime = 0.4f;
     float _parryStunDuration = 3f;
     public DualSwords(Player player) : base(player)
     {
@@ -35,12 +34,12 @@ public class DualSwords : LoadoutBase
 
     public override IEnumerator LightAttack(Vector2 mousePos)
     {
-        yield return MeleeAttack(mousePos, _sword, _swordhitbox, 1.3f, _lightDamage);
+        yield return MeleeAttack(mousePos, _sword, _swordhitbox, 1.3f, false);
     }
 
     public override IEnumerator HeavyAttack(Vector2 mousePos)
     {
-        yield return MeleeAttack(mousePos, _aoeSword, _aoeSwordhitbox, 0f, _heavyDamage);
+        yield return MeleeAttack(mousePos, _aoeSword, _aoeSwordhitbox, 0f, true);
     }
 
     public override IEnumerator HeavyDash(Transform transform, Vector2 mousePos)
@@ -54,8 +53,8 @@ public class DualSwords : LoadoutBase
 
     public override IEnumerator Defense(Vector2 mousePos)
     {
-        _player.SetParrying(true, _parryTime, getMouseDir(mousePos), _parryStunDuration);
-        yield return new WaitForSeconds(_parryTime);
-        _player.SetParrying(false, _parryTime, getMouseDir(mousePos), _parryStunDuration);
+        _player.SetParrying(true, _defenseDuration, getMouseDir(mousePos), _parryStunDuration);
+        yield return new WaitForSeconds(_defenseDuration);
+        _player.SetParrying(false, _defenseDuration, getMouseDir(mousePos), _parryStunDuration);
     }
 }
