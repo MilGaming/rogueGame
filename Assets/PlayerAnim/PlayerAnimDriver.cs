@@ -166,4 +166,16 @@ public class PlayerAnimDriver : MonoBehaviour
     //set inaction to true or false
     public void SetInAction(bool inAction) => animator.SetBool("InAction", inAction);
 
+    public float GetCurrentClipLengthSeconds(int layer = 0)
+    {
+        var infos = animator.GetCurrentAnimatorClipInfo(layer);
+        if (infos != null && infos.Length > 0 && infos[0].clip != null)
+            return infos[0].clip.length;
+
+        return 0f;
+    }
+
+    public Animator GetAnimator() => animator;
+
+
 }
