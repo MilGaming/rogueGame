@@ -64,7 +64,13 @@ public class AttackState : BaseState
         {
             return new DashState(_enemy);
         }
-
+        
+        if (_enemy._data.enemyType == EnemyType.Guardian && dist < _enemy.GetChaseRange() && _enemy.canProtect)
+        {
+            Debug.Log("Hello attack?");
+            return new ProtectState(_enemy); 
+        }
+        
         if (!_attackInProgress && (dist > _enemy.GetAttackRange() || !_enemy.GetAttack().IsReady()))
         {
             if (_enemy._data.enemyType == EnemyType.Assassin)

@@ -12,6 +12,8 @@ public class EnemyData : ScriptableObject
     [SerializeField] public float attackSpeed;
     [SerializeField] public float attackDelay;
     [SerializeField] public float damage;
+
+    [SerializeField] public float protectCooldown;
     [SerializeField] public EnemyType enemyType;
 
     [Header("Idle/Wander")]
@@ -23,5 +25,6 @@ public enum EnemyType{
     Melee,
     Ranged,
     Bomber,
-    Assassin
+    Assassin,
+    Guardian
 }
