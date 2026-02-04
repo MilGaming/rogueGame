@@ -97,16 +97,15 @@ public class LoadoutState : MonoBehaviour
 
             // Execute one
             blockedActions = true;
-            float duration;
 
             switch (a.type)
             {
                 case ActionType.AttackLight:
-                    yield return RunAction(loadout.GetLightAttackDuration(), loadout.LightAttack(mousePos), ActionType.LightAttack, "Attack");
+                    yield return RunAction(loadout.GetLightAttackDuration(), loadout.LightAttack(mousePos), ActionType.AttackLight, "Attack");
                     break;
 
                 case ActionType.AttackHeavy:
-                    yield return RunAction(loadout.GetHeavyAttackDuration(), loadout.HeavyAttack(mousePos), ActionType.HeavyAttack, "Special");
+                    yield return RunAction(loadout.GetHeavyAttackDuration(), loadout.HeavyAttack(mousePos), ActionType.AttackHeavy, "Special");
                     break;
 
                 case ActionType.DashLight:
@@ -118,7 +117,7 @@ public class LoadoutState : MonoBehaviour
                     break;
 
                 case ActionType.Defense:
-                    yield return loadout.Defense(a.mousePos);
+                    yield return RunAction(loadout.GetDefenseDuration(), loadout.Defense(mousePos), ActionType.Defense, "Defense");
                     break;
             }
 
@@ -252,8 +251,7 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
-                yield return RunAction(loadout.GetHeavyDashDuration(), loadout.HeavyDash(transform, mousePos) , ActionAnim.Dash, "Dash");
-                yield return loadout.HeavyDash(transform, mousePosAtTime);
+                yield return RunAction(loadout.GetHeavyDashDuration(), loadout.HeavyDash(transform, mousePos) , ActionType.DashHeavy, "Dash");
             }
             else
             {
@@ -261,15 +259,13 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextDashTime = Time.time + loadout.getLightDashCD();
-                yield return RunAction(loadout.GetLightDashDuration(), loadout.LightDash(vel, transform, mousePos), ActionAnim.Dash, "Dash");
-                yield return loadout.LightDash(velAtTime, transform, mousePosAtTime);
+                yield return RunAction(loadout.GetLightDashDuration(), loadout.LightDash(vel, transform, mousePos), ActionType.DashLight, "Dash");
             }
         }
         finally
         {
             blockedMovement = false;
-            // make sure InAction isn't stuck on
-            //anim.SetInAction(false);
+
         }
     }
 
@@ -286,10 +282,6 @@ public class LoadoutState : MonoBehaviour
             time = Time.time
         });
         nextDefTime = Time.time + loadout.getDefenseCD();
-        float duration = loadout.GetDefenseDuration();
-        IEnumerator gameplay = loadout.Defense(mousePos);
-
-        yield return RunAction(duration, gameplay, ActionAnim.Defense, "Defense");
     }
 
     IEnumerator RunAction(float duration, IEnumerator gameplayRoutine, ActionType animToPlay, string stateTag)
@@ -300,8 +292,8 @@ public class LoadoutState : MonoBehaviour
         // Fire animation trigger
         switch (animToPlay)
         {
-            case ActionType.LightAttack: anim.TriggerAttack(); break;
-            case ActionType.HeavyAttack: anim.TriggerSpecial(); break;
+            case ActionType.AttackLight: anim.TriggerAttack(); break;
+            case ActionType.AttackHeavy: anim.TriggerSpecial(); break;
             case ActionType.DashLight: anim.TriggerDash(); break;
             case ActionType.DashHeavy: anim.TriggerDash(); break;
             case ActionType.Defense: anim.TriggerDefense(); break;
