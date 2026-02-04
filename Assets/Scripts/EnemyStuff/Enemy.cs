@@ -8,6 +8,8 @@ public class Enemy : MonoBehaviour
     [SerializeField] private NavMeshAgent _agent;
     [SerializeField] private IAttack _attack;
 
+    [SerializeField] private float maxDashLenght;
+
     private GameObject _player;
     public float _currentHealth;
     public float RemainingStunDuration { get; private set; }
@@ -99,42 +101,64 @@ public class Enemy : MonoBehaviour
     private IEnumerator DashRoutine()
     {
         _agent.enabled = false;
-        float dashDistance = 3f;
+        float dashDistance = 0f;
         float dashDuration = 0.15f;
 
-        var direction = transform.position -_player.transform.position;
+        var direction = (Vector2)(transform.position -_player.transform.position);
+        var baseDirection = direction.normalized;
+        var finalEnd = Vector3.zero;
         
         direction.Normalize();
+        Vector2 start = (Vector2) transform.position;
 
-        Vector3 start = transform.position;
-        Vector3 end = start + (Vector3)(direction * dashDistance);
-
-        NavMeshHit hit;
-        if (NavMesh.Raycast(start, end, out hit, NavMesh.AllAreas))
+        start = start + direction*1.5f;
+        Vector2 end = start + (direction * maxDashLenght);
+        
+        for (int i=0; i<360; i++)
         {
-            end = hit.position;
-        }
+            direction = ((Vector2) (Quaternion.Euler(0, 0, i) * baseDirection)).normalized;
+            start = (Vector2) transform.position - baseDirection*1.5f;
+            end = (Vector2) transform.position + (direction * maxDashLenght);
+            //Debug.DrawLine(start, start + direction * 10f, Color.green, 1.0f);
+            int mask = LayerMask.GetMask("Wall");
 
-        if (Vector3.Distance(start, end) < 1f)
-        {
-            direction = Quaternion.Euler(0, 0, 145) * direction;
-            end = start + (Vector3)(direction * dashDistance);
-            if (NavMesh.Raycast(start, end, out hit, NavMesh.AllAreas))
+            RaycastHit2D hit = Physics2D.Raycast(
+                start,
+                direction,
+                maxDashLenght,
+                mask
+            );
+
+            if (hit.collider != null)
             {
-                end = hit.position;
+                Debug.Log("hello?");
+                end = hit.point;
+            } 
+            Debug.DrawLine(start, end, Color.red, 3.0f);
+            var distance = Vector2.Distance((Vector2)_player.transform.position, end);
+            if (distance > dashDistance)
+            {
+                Debug.Log(direction);
+                dashDistance = distance;
+                finalEnd = (Vector3)end;
             }
         }
+        start = transform.position;
+        end = finalEnd;
 
-        if (Vector3.Distance(start, end) < 1f)
+        if (dashDistance < 4.0f)
         {
-            direction = Quaternion.Euler(0, 0, -90) * direction;
-            end = start + (Vector3)(direction * dashDistance);
-            if (NavMesh.Raycast(start, end, out hit, NavMesh.AllAreas))
-            {
-                end = hit.position;
-            }
+            _agent.enabled = true;
+            canDash = true;
         }
 
+        else {
+        Debug.DrawLine(start, end, Color.purple, 1.5f);
+        /*NavMeshHit navHit;
+        if (NavMesh.Raycast(start, end, out navHit, NavMesh.AllAreas)) 
+        { 
+            end = navHit.position; 
+        }*/ 
 
         float t = 0f;
         while (t < 1f)
@@ -143,8 +167,9 @@ public class Enemy : MonoBehaviour
             transform.position = Vector3.Lerp(start, end, t);
             yield return null;
         }
+        transform.position = end;
         _agent.enabled = true;
-        
+        }
         
     }
 
