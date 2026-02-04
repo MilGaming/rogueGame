@@ -31,19 +31,19 @@ public class LoadoutBase
         _player = player;
     }
 
-    public virtual IEnumerator LightAttack(Vector2 mousePos)
+    public virtual IEnumerator LightAttack(Vector2 dir)
     {
+
         yield return new WaitForSeconds(GetLightAttackDuration());
         Debug.Log("Do light attack");
-        yield return new WaitForSeconds(_attackSpeed);
     }
 
-    public virtual IEnumerator HeavyAttack(Vector2 mousePos) {
+    public virtual IEnumerator HeavyAttack(Vector2 dir) {
+        yield return new WaitForSeconds(GetHeavyAttackDuration());
         Debug.Log("Do heavy attack");
-        yield return new WaitForSeconds(_attackSpeed);
     }
 
-    public virtual IEnumerator LightDash(Vector2 direction, Transform transform, Vector2 mousePos)
+    public virtual IEnumerator LightDash(Vector2 direction, Transform transform)
     {
         float dashDistance = 4f;
         float dashDuration = 0.15f;
@@ -61,12 +61,11 @@ public class LoadoutBase
             yield return null;
         }
     }
-    public virtual IEnumerator HeavyDash(Transform transform, Vector2 mousePos)
+    public virtual IEnumerator HeavyDash(Vector2 direction, Transform transform)
     {
         float dashDistance = 12f;
         float dashDuration = 0.2f;
 
-        var direction = getMouseDir(mousePos);
         direction.Normalize();
 
         Vector3 start = transform.position;
@@ -84,8 +83,8 @@ public class LoadoutBase
 
     public virtual IEnumerator Defense(Vector2 mousePos)
     {
-        Debug.Log("Do defense");
         yield return new WaitForSeconds(0.1f);
+        Debug.Log("Do defense");
     }
 
     public float getLightDashCD()
@@ -114,23 +113,17 @@ public class LoadoutBase
     public virtual float GetLightDashDuration() => _lightDashDuration;
     public virtual float GetHeavyDashDuration() => _HeavyDashDuration;
 
-    protected Vector2 getMouseDir(Vector2 mousePos)
+    public virtual float GetAttackCooldown(bool heavy)
     {
-        Transform player = _player.transform;
-        Vector2 playerPos = player.position;
-
-        Vector2 toMouse = mousePos - playerPos;
-        Vector2 dir = toMouse.sqrMagnitude > 0.000001f ? toMouse.normalized : Vector2.right;
-        return dir;
+        return heavy ? _heavyAttackDuration * _attackSpeed
+                     : _lightAttackDuration * _attackSpeed;
     }
 
-    protected IEnumerator MeleeAttack(Vector2 mousePos, GameObject mySword, SwordHitbox mySwordHitbox, float distance, bool isHeavy)
+    protected IEnumerator MeleeAttack(Vector2 dir, GameObject mySword, SwordHitbox mySwordHitbox, float distance, bool isHeavy)
     {
         if (mySwordHitbox == null) yield break;
 
         Vector2 playerPos = _player.transform.position;
-
-        Vector2 dir = getMouseDir(mousePos);
 
         // world-space placement
         Vector3 pos = playerPos + dir * distance;
@@ -143,13 +136,13 @@ public class LoadoutBase
         if (isHeavy) {
             yield return new WaitForSeconds(GetHeavyAttackWindup());
             mySwordHitbox.Activate(_heavyDamage, _heavyAttackDuration - GetHeavyAttackWindup());
+            yield return new WaitForSeconds(_heavyAttackDuration - GetHeavyAttackWindup());
         }
         else
         {
             yield return new WaitForSeconds(GetLightAttackWindup());
             mySwordHitbox.Activate(_lightDamage, _lightAttackDuration - GetLightAttackWindup());
+            yield return new WaitForSeconds(_lightAttackDuration - GetLightAttackWindup());
         }
-
-        yield return new WaitForSeconds(_attackSpeed);
     }
 }

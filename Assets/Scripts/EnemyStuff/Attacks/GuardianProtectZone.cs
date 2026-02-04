@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GuardianProtectZone : DamageZone
@@ -12,12 +13,17 @@ public class GuardianProtectZone : DamageZone
     private void Start()
     {
         _player = GameObject.FindWithTag("Player");
+        _dmg = 5f;
     }
 
-
+    private void Update()
+    {
+        _hit = false;
+        UpdateFacingTransform(1.3f, 40f);
+    }
     protected override void OnTriggerEnter2D(Collider2D other)
     {
-        var player = other.GetComponentInParent<Player>();
+        var player = other.GetComponent<Player>();
         if (player != null)
         {
             player.TakeDamage(_dmg, transform.parent.gameObject);
@@ -33,6 +39,7 @@ public class GuardianProtectZone : DamageZone
                 Vector2 hitDir = (other.transform.position - transform.position).normalized;
                 StartCoroutine(ShieldPush(hitDir));
             }
+            _hit = true;
         }
 
         var projectile = other.GetComponent<TwoXArrowLogic>();
@@ -40,7 +47,7 @@ public class GuardianProtectZone : DamageZone
         {
             projectile.Init(
                 5f,
-                (Vector2)_player.transform.position,
+                (_player.transform.position - transform.position).normalized,
                 false,
                 true
             );
@@ -77,6 +84,43 @@ public class GuardianProtectZone : DamageZone
 
         transform.localPosition = startPos;
         _animating = false;
+    }
+
+    private void UpdateFacingTransform(
+    float fixedDistance,
+    float turnSpeedDegreesPerSecond)
+    {
+        Transform parent = transform.parent;
+
+        if (!transform || !parent || !_player)
+            return;
+
+        Vector2 toPlayer = (Vector2)(_player.transform.position - parent.position);
+        if (toPlayer.sqrMagnitude < 0.00001f)
+            return;
+
+        // Desired angle around Z
+        float targetAngle = Mathf.Atan2(toPlayer.y, toPlayer.x) * Mathf.Rad2Deg;
+
+        // Current angle based on current position around parent
+        Vector2 fromParent = (Vector2)(transform.position - parent.position);
+        float currentAngle = Mathf.Atan2(fromParent.y, fromParent.x) * Mathf.Rad2Deg;
+
+        // Turn with speed limit
+        float newAngle = Mathf.MoveTowardsAngle(
+            currentAngle,
+            targetAngle,
+            turnSpeedDegreesPerSecond * Time.deltaTime
+        );
+
+        // Maintain fixed distance from parent
+        Vector2 offset = new Vector2(
+            Mathf.Cos(newAngle * Mathf.Deg2Rad),
+            Mathf.Sin(newAngle * Mathf.Deg2Rad)
+        ) * fixedDistance;
+
+        transform.position = (Vector2)parent.position + offset;
+        transform.rotation = Quaternion.Euler(0f, 0f, newAngle + 90f);
     }
 
 }

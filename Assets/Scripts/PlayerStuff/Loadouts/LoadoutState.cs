@@ -1,9 +1,11 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 using UnityEngine.UIElements;
+
 public class LoadoutState : MonoBehaviour
 {
 
@@ -16,8 +18,6 @@ public class LoadoutState : MonoBehaviour
     private struct BufferedAction
     {
         public ActionType type;
-        public Vector2 mousePos;
-        public Vector2 vel;     // for dash light
         public float time;      // when it was queued
     }
 
@@ -35,6 +35,7 @@ public class LoadoutState : MonoBehaviour
     Vector2 vel;
     bool blockedMovement = false;
     bool blockedActions = false;
+    bool doAnimationAnyway = false;
 
 
     private float currentSpeed;
@@ -48,6 +49,7 @@ public class LoadoutState : MonoBehaviour
     private float nextHeavyDashTime;
     private float nextDefTime;
     private float nextDashTime;
+    private float nextAttackTime;
 
 
     [Header("Input (assign from your Controls asset)")]
@@ -103,25 +105,33 @@ public class LoadoutState : MonoBehaviour
             switch (a.type)
             {
                 case ActionType.AttackLight:
-                    yield return RunAction(loadout.GetLightAttackDuration(), loadout.LightAttack(mousePos), ActionType.AttackLight, "Attack");
+                    if (Time.time < nextAttackTime)
+                        break;
+                    yield return RunAction(loadout.GetLightAttackDuration(), loadout.LightAttack(getMouseDir()), ActionType.AttackLight, "Attack");
+                    nextAttackTime = Time.time + loadout.GetAttackCooldown(false);
                     break;
 
                 case ActionType.AttackHeavy:
+                    if (Time.time < nextAttackTime)
+                        break;
                     currentSpeed = maxSpeed*0.4f;
-                    yield return RunAction(loadout.GetHeavyAttackDuration(), loadout.HeavyAttack(mousePos), ActionType.AttackHeavy, "Special");
+                    yield return RunAction(loadout.GetHeavyAttackDuration(), loadout.HeavyAttack(getMouseDir()), ActionType.AttackHeavy, "Special");
+                    nextAttackTime = Time.time + loadout.GetAttackCooldown(true);
                     currentSpeed = maxSpeed;
                     break;
 
                 case ActionType.DashLight:
-                    yield return DoDash(heavy: false, a.vel, a.mousePos);
+                    yield return DoDash(heavy: false);
                     break;
 
                 case ActionType.DashHeavy:
-                    yield return DoDash(heavy: true, a.vel, a.mousePos);
+                    yield return DoDash(heavy: true);
                     break;
 
                 case ActionType.Defense:
-                    yield return RunAction(loadout.GetDefenseDuration(), loadout.Defense(mousePos), ActionType.Defense, "Defense");
+                    doAnimationAnyway = true;
+                    yield return RunAction(loadout.GetDefenseDuration(), loadout.Defense(getMouseDir()), ActionType.Defense, "Defense");
+                    doAnimationAnyway = false;
                     break;
             }
 
@@ -200,8 +210,6 @@ public class LoadoutState : MonoBehaviour
         EnqueueAction(new BufferedAction
         {
             type = heavy ? ActionType.AttackHeavy : ActionType.AttackLight,
-            mousePos = mousePos,
-            vel = vel,
             time = Time.time
         });
     }
@@ -238,14 +246,12 @@ public class LoadoutState : MonoBehaviour
         EnqueueAction(new BufferedAction
         {
             type = heavy ? ActionType.DashHeavy : ActionType.DashLight,
-            mousePos = mousePos,
-            vel = vel,       // snapshot velocity for light dash
             time = Time.time
         });
     }
 
 
-    IEnumerator DoDash(bool heavy, Vector2 velAtTime, Vector2 mousePosAtTime)
+    IEnumerator DoDash(bool heavy)
     {
         try
         {
@@ -256,7 +262,7 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
-                yield return RunAction(loadout.GetHeavyDashDuration(), loadout.HeavyDash(transform, mousePos) , ActionType.DashHeavy, "Dash");
+                yield return RunAction(loadout.GetHeavyDashDuration(), loadout.HeavyDash(getMouseDir(), transform) , ActionType.DashHeavy, "Dash");
             }
             else
             {
@@ -264,7 +270,7 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextDashTime = Time.time + loadout.getLightDashCD();
-                yield return RunAction(loadout.GetLightDashDuration(), loadout.LightDash(vel, transform, mousePos), ActionType.DashLight, "Dash");
+                yield return RunAction(loadout.GetLightDashDuration(), loadout.LightDash(vel, transform), ActionType.DashLight, "Dash");
             }
         }
         finally
@@ -278,12 +284,11 @@ public class LoadoutState : MonoBehaviour
 
     void OnDefense(InputAction.CallbackContext ctx)
     {
+        
         if (blockedActions || Time.time < nextDefTime) return;
         EnqueueAction(new BufferedAction
         {
             type = ActionType.Defense,
-            mousePos = mousePos,
-            vel = vel,
             time = Time.time
         });
         nextDefTime = Time.time + loadout.getDefenseCD();
@@ -355,7 +360,7 @@ public class LoadoutState : MonoBehaviour
         if (!blockedMovement) transform.position += (Vector3)(vel * Time.deltaTime);
 
         // Facing direction (mouse -> player)
-        if (blockedActions) return;
+        if (blockedActions && !doAnimationAnyway) return;
         updatePlayerAni();
     }
 
@@ -370,6 +375,20 @@ public class LoadoutState : MonoBehaviour
         anim.UpdateLocomotion(lookDir, animVel);
     }
 
+    public Vector2 getMouseDir()
+    {
+        Transform player = transform;
+        Vector2 playerPos = player.position;
+
+        Vector2 toMouse = mousePos - playerPos;
+        Vector2 dir = toMouse.sqrMagnitude > 0.000001f ? toMouse.normalized : Vector2.right;
+        return dir;
+    }
+
+    public void SetSpeed(float speedProcent)
+    {
+        currentSpeed = speedProcent * maxSpeed;
+    }
 
 
 }

@@ -572,6 +572,7 @@ MonoBehaviour:
   isBlocking: 0
   sr: {fileID: 4833446633322839767}
   col: {fileID: 4857567525672572144}
+  loadoutState: {fileID: 5298250564863856370}
 --- !u!50 &4565233139228972871
 Rigidbody2D:
   serializedVersion: 5
