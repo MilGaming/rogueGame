@@ -99,6 +99,13 @@ public class LoadoutBase
         return _defCD;
     }
 
+    //override in subclasses
+    public virtual float GetLightAttackDuration() => _lightWindup + _attackSpeed;
+    public virtual float GetHeavyAttackDuration() => _lightWindup + _attackSpeed; //i dont get heavy attack
+    public virtual float GetDefenseDuration() => 2f; //temp change
+    public virtual float GetLightDashDuration() => 0.15f;
+    public virtual float GetHeavyDashDuration() => 0.20f;
+
     protected Vector2 getMouseDir(Vector2 mousePos)
     {
         Transform player = _player.transform;
