@@ -131,7 +131,6 @@ public class LoadoutState : MonoBehaviour
     {
         if (blockedActions) return;
         blockedActions = true;
-        anim.TriggerAttack();
         if (ctx.interaction is HoldInteraction)
             StartCoroutine(DoAttack(true));
         else if (ctx.interaction is TapInteraction)
@@ -141,35 +140,26 @@ public class LoadoutState : MonoBehaviour
     IEnumerator DoAttack(bool heavy)
     {
         float duration;
-        IEnumerator gameplayRoutine;
+        IEnumerator gameplay;
+        ActionAnim animType;
+        string tag;
 
         if (heavy)
         {
             duration = loadout.GetHeavyAttackDuration();
-            gameplayRoutine = loadout.HeavyAttack(mousePos);
-            anim.TriggerSpecial();   // heavy = special
+            gameplay = loadout.HeavyAttack(mousePos);
+            animType = ActionAnim.HeavyAttack;
+            tag = "Special";
         }
         else
         {
             duration = loadout.GetLightAttackDuration();
-            gameplayRoutine = loadout.LightAttack(mousePos);
-            anim.TriggerAttack();    // light
+            gameplay = loadout.LightAttack(mousePos);
+            animType = ActionAnim.LightAttack;
+            tag = "Attack";
         }
 
-        blockedActions = true;
-        anim.SetInAction(true);
-
-        // start gameplay
-        Coroutine gameplay = StartCoroutine(gameplayRoutine);
-
-        // lock for duration
-        yield return new WaitForSeconds(duration);
-
-        // make sure gameplay finished
-        yield return gameplay;
-
-        anim.SetInAction(false);
-        blockedActions = false;
+        yield return RunAction(duration, gameplay, animType, tag);
     }
 
     void OnDashStarted(InputAction.CallbackContext ctx)
@@ -210,17 +200,15 @@ public class LoadoutState : MonoBehaviour
 
     IEnumerator DoDash(bool heavy)
     {
-        anim.SetInAction(true);
-        anim.TriggerDash();
         try
         {
+            // Cooldown checks
             if (heavy)
             {
                 if (Time.time < nextHeavyDashTime)
                     yield break;
 
                 nextHeavyDashTime = Time.time + loadout.getHeavyDashCD();
-                yield return loadout.HeavyDash(transform, mousePos);
             }
             else
             {
@@ -228,14 +216,31 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextDashTime = Time.time + loadout.getLightDashCD();
-                yield return loadout.LightDash(vel, transform, mousePos);
             }
+
+            blockedMovement = true;
+
+            float duration = heavy ? loadout.GetHeavyDashDuration()
+                                   : loadout.GetLightDashDuration();
+
+            IEnumerator gameplay = heavy ? loadout.HeavyDash(transform, mousePos) : loadout.LightDash(vel, transform, mousePos);
+
+            yield return RunAction(duration, gameplay, ActionAnim.Dash, "Dash");
         }
         finally
         {
-            anim.SetInAction(false);
             blockedMovement = false;
             blockedActions = false;
+
+            // also cancel the delayed movement lock if it was started
+            if (dashLockRoutine != null)
+            {
+                StopCoroutine(dashLockRoutine);
+                dashLockRoutine = null;
+            }
+
+            // make sure InAction isn't stuck on
+            anim.SetInAction(false);
         }
     }
 
@@ -253,40 +258,58 @@ public class LoadoutState : MonoBehaviour
     {
         nextDefTime = Time.time + loadout.getDefenseCD();
 
-        anim.SetInAction(true);
-        anim.TriggerDefense();
+        float duration = loadout.GetDefenseDuration();
+        IEnumerator gameplay = loadout.Defense(mousePos);
 
-        yield return loadout.Defense(mousePos);
-
-        anim.SetInAction(false);
-
-        blockedActions = false;
+        yield return RunAction(duration, gameplay, ActionAnim.Block, "Defense");
     }
 
-    IEnumerator RunAction(float duration, System.Func<IEnumerator> gameplayRoutine, System.Action fireAnim)
+    IEnumerator RunAction(float duration, IEnumerator gameplayRoutine, ActionAnim animToPlay, string stateTag)
     {
         blockedActions = true;
         anim.SetInAction(true);
+        Animator animator = anim.GetAnimator();
 
-        // fire animation immediately
-        fireAnim?.Invoke();
+        // Fire animation trigger
+        switch (animToPlay)
+        {
+            case ActionAnim.LightAttack: anim.TriggerAttack(); break;
+            case ActionAnim.HeavyAttack: anim.TriggerSpecial(); break;
+            case ActionAnim.Dash: anim.TriggerDash(); break;
+            case ActionAnim.Block: anim.TriggerDefense(); break;
+        }
 
-        // start gameplay coroutine in parallel
+        // Wait until the animator
+        while (animator.GetCurrentAnimatorStateInfo(0).IsTag(stateTag))
+            yield return null;
+
+        // read clip length
+        float clipLen = anim.GetCurrentClipLengthSeconds(0);
+
+        float prevSpeed = animator.speed;
+
+        if (clipLen > 0.001f && duration > 0.001f)
+            animator.speed = clipLen / duration;
+        else
+            animator.speed = 1f;
+
+        //  parallel
         Coroutine gameplay = null;
         if (gameplayRoutine != null)
-            gameplay = StartCoroutine(gameplayRoutine());
+            gameplay = StartCoroutine(gameplayRoutine);
 
-        // lock for gameplay-defined duration
-        if (duration > 0f)
-            yield return new WaitForSeconds(duration);
+        // Lock for your gameplay duration
+        yield return new WaitForSeconds(duration);
 
-        // optional: ensure gameplay finished too (recommended so you don't overlap logic)
-        if (gameplay != null)
-            yield return gameplay;
+        // Ensure gameplay finished too
+        if (gameplay != null) yield return gameplay;
 
+        animator.speed = prevSpeed;
         anim.SetInAction(false);
         blockedActions = false;
     }
+
+
 
 
 
@@ -305,16 +328,20 @@ public class LoadoutState : MonoBehaviour
         Vector2 targetVel = input * maxSpeed;
         float rate = (input.sqrMagnitude > 0.0001f) ? accel : decel;
         vel = Vector2.MoveTowards(vel, targetVel, rate * Time.deltaTime);
-        if (blockedMovement) return;
-        transform.position += (Vector3)(vel * Time.deltaTime);
 
         // Facing direction (mouse -> player)
         Vector2 lookDir = mousePos - (Vector2)transform.position;
         if (lookDir.sqrMagnitude > 0.0001f) lookDir.Normalize();
         else lookDir = Vector2.down;
 
+        Vector2 animVel = blockedMovement ? Vector2.zero : vel; //make shit zero so standing still works
         // update animation
-        anim.UpdateLocomotion(lookDir, vel);
+        anim.UpdateLocomotion(lookDir, animVel);
+
+        if (blockedMovement) return;
+        transform.position += (Vector3)(vel * Time.deltaTime);
+
+
 
     }
 

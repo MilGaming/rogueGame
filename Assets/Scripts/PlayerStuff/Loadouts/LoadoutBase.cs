@@ -101,7 +101,7 @@ public class LoadoutBase
 
     //override in subclasses
     public virtual float GetLightAttackDuration() => _lightWindup + _attackSpeed;
-    public virtual float GetHeavyAttackDuration() => _lightWindup + _attackSpeed; //i dont get heavy attack
+    public virtual float GetHeavyAttackDuration() => _lightWindup + _attackSpeed + 3f; //i dont get heavy attack
     public virtual float GetDefenseDuration() => 2f; //temp change
     public virtual float GetLightDashDuration() => 0.15f;
     public virtual float GetHeavyDashDuration() => 0.20f;
