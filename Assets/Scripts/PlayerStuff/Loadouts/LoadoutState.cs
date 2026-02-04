@@ -7,6 +7,18 @@ public class LoadoutState : MonoBehaviour
 
     [SerializeField] private Player player;
 
+    [SerializeField] private PlayerAnimDriver anim;
+
+    public enum ActionAnim
+    {
+        None,
+        LightAttack,
+        HeavyAttack,
+        Dash,
+        Block
+    }
+
+
     [Header("Movement")]
     public float maxSpeed = 8f;
     public float accel = 100f;
@@ -119,7 +131,7 @@ public class LoadoutState : MonoBehaviour
     {
         if (blockedActions) return;
         blockedActions = true;
-
+        anim.TriggerAttack();
         if (ctx.interaction is HoldInteraction)
             StartCoroutine(DoAttack(true));
         else if (ctx.interaction is TapInteraction)
@@ -128,9 +140,35 @@ public class LoadoutState : MonoBehaviour
 
     IEnumerator DoAttack(bool heavy)
     {
-        if (heavy) yield return loadout.HeavyAttack(mousePos);
-        else yield return loadout.LightAttack(mousePos);
+        float duration;
+        IEnumerator gameplayRoutine;
 
+        if (heavy)
+        {
+            duration = loadout.GetHeavyAttackDuration();
+            gameplayRoutine = loadout.HeavyAttack(mousePos);
+            anim.TriggerSpecial();   // heavy = special
+        }
+        else
+        {
+            duration = loadout.GetLightAttackDuration();
+            gameplayRoutine = loadout.LightAttack(mousePos);
+            anim.TriggerAttack();    // light
+        }
+
+        blockedActions = true;
+        anim.SetInAction(true);
+
+        // start gameplay
+        Coroutine gameplay = StartCoroutine(gameplayRoutine);
+
+        // lock for duration
+        yield return new WaitForSeconds(duration);
+
+        // make sure gameplay finished
+        yield return gameplay;
+
+        anim.SetInAction(false);
         blockedActions = false;
     }
 
@@ -172,6 +210,8 @@ public class LoadoutState : MonoBehaviour
 
     IEnumerator DoDash(bool heavy)
     {
+        anim.SetInAction(true);
+        anim.TriggerDash();
         try
         {
             if (heavy)
@@ -193,6 +233,7 @@ public class LoadoutState : MonoBehaviour
         }
         finally
         {
+            anim.SetInAction(false);
             blockedMovement = false;
             blockedActions = false;
         }
@@ -211,9 +252,43 @@ public class LoadoutState : MonoBehaviour
     IEnumerator DoDefense()
     {
         nextDefTime = Time.time + loadout.getDefenseCD();
+
+        anim.SetInAction(true);
+        anim.TriggerDefense();
+
         yield return loadout.Defense(mousePos);
+
+        anim.SetInAction(false);
+
         blockedActions = false;
     }
+
+    IEnumerator RunAction(float duration, System.Func<IEnumerator> gameplayRoutine, System.Action fireAnim)
+    {
+        blockedActions = true;
+        anim.SetInAction(true);
+
+        // fire animation immediately
+        fireAnim?.Invoke();
+
+        // start gameplay coroutine in parallel
+        Coroutine gameplay = null;
+        if (gameplayRoutine != null)
+            gameplay = StartCoroutine(gameplayRoutine());
+
+        // lock for gameplay-defined duration
+        if (duration > 0f)
+            yield return new WaitForSeconds(duration);
+
+        // optional: ensure gameplay finished too (recommended so you don't overlap logic)
+        if (gameplay != null)
+            yield return gameplay;
+
+        anim.SetInAction(false);
+        blockedActions = false;
+    }
+
+
 
     private void Update()
     {
@@ -232,6 +307,15 @@ public class LoadoutState : MonoBehaviour
         vel = Vector2.MoveTowards(vel, targetVel, rate * Time.deltaTime);
         if (blockedMovement) return;
         transform.position += (Vector3)(vel * Time.deltaTime);
+
+        // Facing direction (mouse -> player)
+        Vector2 lookDir = mousePos - (Vector2)transform.position;
+        if (lookDir.sqrMagnitude > 0.0001f) lookDir.Normalize();
+        else lookDir = Vector2.down;
+
+        // update animation
+        anim.UpdateLocomotion(lookDir, vel);
+
     }
 
 
