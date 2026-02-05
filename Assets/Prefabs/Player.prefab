@@ -661,6 +661,8 @@ MonoBehaviour:
   _shieldMask:
     serializedVersion: 2
     m_Bits: 64
+  DamageAmp: 0
+  BaseDamageAmp: 1
 --- !u!70 &7005813500300224167
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

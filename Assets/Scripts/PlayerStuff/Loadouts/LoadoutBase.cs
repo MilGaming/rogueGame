@@ -43,7 +43,7 @@ public class LoadoutBase
         Debug.Log("Do heavy attack");
     }
 
-    public virtual IEnumerator LightDash(Vector2 direction, Transform transform)
+    public virtual IEnumerator LightDash(Vector2 direction, Transform transform, Vector2 mousePos)
     {
         float dashDistance = 4f;
         float dashDuration = 0.15f;
@@ -102,9 +102,23 @@ public class LoadoutBase
         return _defCD;
     }
 
+    public float getLightDamage()
+    {
+        return _lightDamage *_player.BaseDamageAmp + _lightDamage*_player.DamageAmp;
+    }
+
+    public float getHeavyDamage()
+    {
+        return _heavyDamage *_player.BaseDamageAmp + _heavyDamage*_player.DamageAmp;
+    }
+
     //override in subclasses
     public float GetLightAttackDuration() => _lightAttackDuration;
     public float GetHeavyAttackDuration() => _heavyAttackDuration;
+
+    public float GetTempDamageBoost() => _player.DamageAmp;
+
+    public float GetPermDamageBoost() => _player.BaseDamageAmp;
 
     public float GetLightAttackWindup() => _lightAttackDuration * _windupProcent;
 
@@ -135,13 +149,13 @@ public class LoadoutBase
 
         if (isHeavy) {
             yield return new WaitForSeconds(GetHeavyAttackWindup());
-            mySwordHitbox.Activate(_heavyDamage, _heavyAttackDuration - GetHeavyAttackWindup());
+            mySwordHitbox.Activate(getHeavyDamage(), _heavyAttackDuration - GetHeavyAttackWindup());
             yield return new WaitForSeconds(_heavyAttackDuration - GetHeavyAttackWindup());
         }
         else
         {
             yield return new WaitForSeconds(GetLightAttackWindup());
-            mySwordHitbox.Activate(_lightDamage, _lightAttackDuration - GetLightAttackWindup());
+            mySwordHitbox.Activate(getLightDamage(), _lightAttackDuration - GetLightAttackWindup());
             yield return new WaitForSeconds(_lightAttackDuration - GetLightAttackWindup());
         }
     }

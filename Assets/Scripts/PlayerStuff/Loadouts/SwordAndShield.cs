@@ -38,10 +38,10 @@ public class SwordAndShield : LoadoutBase
         yield return MeleeAttack(direction, _heavySword, _heavySwordhitbox, 4f, true);
     }
 
-    public override IEnumerator LightDash(Vector2 direction, Transform transform)
+    public override IEnumerator LightDash(Vector2 direction, Transform transform, Vector2 mousePos)
     {
         _player.SetStunning(true, _stunDuration);
-        yield return base.LightDash(direction, transform);
+        yield return base.LightDash(direction, transform, mousePos);
         _player.SetStunning(false, _stunDuration);
     }
 

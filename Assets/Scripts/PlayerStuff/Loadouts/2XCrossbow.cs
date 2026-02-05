@@ -35,7 +35,7 @@ public GameObject DefenseProjectile;
         _arrowRenderer.enabled = true;
         _arrowCollider.enabled = true;
         var arrow = arrowObj.GetComponent<TwoXArrowLogic>();
-        arrow.Init(_lightDamage, direction, false, false);
+        arrow.Init(getLightDamage(), direction, false, false);
         yield return null; 
     }
 
@@ -49,12 +49,12 @@ public GameObject DefenseProjectile;
           yield return new WaitForSeconds(_attackSpeed);
     }
 
-    public override IEnumerator LightDash(Vector2 direction, Transform transform)
+    public override IEnumerator LightDash(Vector2 direction, Transform transform, Vector2 mousePos)
     {
-         yield return base.LightDash(direction, transform);
-         yield return LightAttackAttack(direction);
+         yield return base.LightDash(direction, transform, mousePos);
+         yield return LightAttackAttack(mousePos);
          yield return new WaitForSeconds(0.1f);
-         yield return LightAttackAttack(direction);
+         yield return LightAttackAttack(mousePos);
     }
 
     public override IEnumerator HeavyDash(Vector2 direction, Transform transform)
