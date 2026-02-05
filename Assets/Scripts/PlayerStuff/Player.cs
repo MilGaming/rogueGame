@@ -18,6 +18,11 @@ public class Player : MonoBehaviour
     private float _stunDuration = 1f;
     private bool _isDealingDmg = false;
     private float _damage = 5f;
+
+    public float DamageAmp = 0.0f;
+    public float BaseDamageAmp = 1f;
+
+    private float _damageBoostDuration;
     private float _parryStunDuration = 10f;
 
 
@@ -97,7 +102,7 @@ public class Player : MonoBehaviour
     public void SetDealingDamage(bool isDealingdmg, float damageAmount)
     {
         _isDealingDmg = isDealingdmg;
-        _damage = damageAmount;
+        _damage = damageAmount*BaseDamageAmp + damageAmount*DamageAmp;
     }
 
     public void SetInvinsible(bool isInvinsible)
@@ -179,6 +184,28 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void IncreaseDamage(float percent, bool permanent)
+    {
+        if (permanent){
+            BaseDamageAmp += 0.01f*percent;
+        }
+        else
+        {
+            StartCoroutine(DamageAmpTimer(percent, 10.0f));
+        }
+    }
+    private IEnumerator DamageAmpTimer(float percent, float time)
+    {
+        _damageBoostDuration += time;
+        DamageAmp += 0.01f*percent;
+        yield return new WaitForSeconds(_damageBoostDuration );
+        _damageBoostDuration -= time;
+        if (_damageBoostDuration <= 0)
+        {
+             DamageAmp = 0f;
+        }
+        
+    }
 
 
 

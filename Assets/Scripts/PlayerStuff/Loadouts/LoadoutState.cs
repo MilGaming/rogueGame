@@ -21,6 +21,8 @@ public class LoadoutState : MonoBehaviour
         public float time;      // when it was queued
     }
 
+    private ChargeUp chargeUpBar;
+
     [Header("Input Buffer")]
     [SerializeField] private float bufferWindow = 0.20f; // 200ms is typical
     private readonly Queue<BufferedAction> buffer = new Queue<BufferedAction>(4);
@@ -74,6 +76,7 @@ public class LoadoutState : MonoBehaviour
     {
         loadout = new LoadoutBase(player);
         currentSpeed = maxSpeed;
+        chargeUpBar = GameObject.FindWithTag("ChargeBar").GetComponent<ChargeUp>();
     }
 
     private void EnqueueAction(BufferedAction a)
@@ -218,8 +221,13 @@ public class LoadoutState : MonoBehaviour
     {
         dashHeld = true;
         dashPressTime = Time.time;
+        if (Time.time > nextHeavyDashTime)
+        {
+            chargeUpBar.SetChargeBar(true);
+        }
         dashLockRoutine = StartCoroutine(LockMovementAfterDelay());
     }
+
     IEnumerator LockMovementAfterDelay()
     {
         yield return new WaitForSeconds(heavyDashHoldTime);
@@ -241,13 +249,18 @@ public class LoadoutState : MonoBehaviour
             StopCoroutine(dashLockRoutine);
             dashLockRoutine = null;
         }
-        bool heavy = (Time.time - dashPressTime) >= heavyDashHoldTime;
-
+        bool heavy = false;
+        if (dashPressTime > nextHeavyDashTime)
+        {
+            heavy = (Time.time - dashPressTime) >= heavyDashHoldTime;
+        }
+        
         EnqueueAction(new BufferedAction
         {
             type = heavy ? ActionType.DashHeavy : ActionType.DashLight,
             time = Time.time
         });
+        chargeUpBar.SetChargeBar(false);
     }
 
 
@@ -270,7 +283,7 @@ public class LoadoutState : MonoBehaviour
                     yield break;
 
                 nextDashTime = Time.time + loadout.getLightDashCD();
-                yield return RunAction(loadout.GetLightDashDuration(), loadout.LightDash(vel, transform), ActionType.DashLight, "Dash");
+                yield return RunAction(loadout.GetLightDashDuration(), loadout.LightDash(vel, transform, getMouseDir()), ActionType.DashLight, "Dash");
             }
         }
         finally
