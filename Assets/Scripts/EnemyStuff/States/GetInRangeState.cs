@@ -38,21 +38,15 @@ public class GetInRangeState : BaseState
             _agent.transform.position,
             _player.transform.position
         );
-        if (_enemy._data.enemyType == EnemyType.Guardian && dist < _enemy.GetChaseRange() && _enemy.canProtect)
-        {
-            Debug.Log("Hello?");
-            return new ProtectState(_enemy); 
-        }
 
         if(_enemy._data.enemyType == EnemyType.Ranged && dist < (_enemy.GetAttackRange() / 2) && _enemy.canDash)
         {
-            return new DashState(_enemy);
+            _enemy.Dash();
         }
         if (dist > _enemy.GetChaseRange())
             return new IdleState(_enemy);
         if (dist < _enemy.GetAttackRange() && _enemy.GetAttack().IsReady())
             return new AttackState(_enemy);
-
         return this;
     }
 }
