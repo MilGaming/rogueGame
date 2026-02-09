@@ -1065,8 +1065,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -0.000038161}
-  m_SizeDelta: {x: 400, y: 400}
+  m_AnchoredPosition: {x: 1.915, y: 0}
+  m_SizeDelta: {x: 472.75, y: 453.606}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2324179760567198421
 CanvasRenderer:
@@ -1089,7 +1089,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.44654083, g: 0.44654083, b: 0.44654083, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1506,8 +1506,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -0.000038161}
-  m_SizeDelta: {x: 400, y: 400}
+  m_AnchoredPosition: {x: 3.829, y: -7.658}
+  m_SizeDelta: {x: 468.921, y: 461.264}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3323599475127648585
 CanvasRenderer:
@@ -1530,7 +1530,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.44654083, g: 0.44654083, b: 0.44654083, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1581,11 +1581,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2513416427754063810, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 130.9129
+      value: 87.1802
       objectReference: {fileID: 0}
     - target: {fileID: 2513416427754063810, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 128.983
+      value: 87.169
       objectReference: {fileID: 0}
     - target: {fileID: 2513416427754063810, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1617,11 +1617,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2513416427754063810, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -150
+      value: -150.08972
       objectReference: {fileID: 0}
     - target: {fileID: 2513416427754063810, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 100.4039
+      value: 100.14691
       objectReference: {fileID: 0}
     - target: {fileID: 2513416427754063810, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1638,6 +1638,14 @@ PrefabInstance:
     - target: {fileID: 4936446152601078585, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
       propertyPath: m_Name
       value: ChargeUpBar
+      objectReference: {fileID: 0}
+    - target: {fileID: 6460358308461582022, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 00373e09af8536e48bf20515188b2b84, type: 3}
+    - target: {fileID: 6460358308461582022, guid: 6bd939817b09b7c4b84f5a8bbabedd0f, type: 3}
+      propertyPath: m_Color.a
+      value: 0.39215687
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
