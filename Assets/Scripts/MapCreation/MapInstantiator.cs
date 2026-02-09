@@ -53,14 +53,14 @@ public class MapInstantiator : MonoBehaviour
                     case 3:
                         tilemapGround.SetTile(cell, groundTileGrass1);
                         spawnedObjects.Add(
-                            Instantiate(furnishingPrefabs[0], tilemapGround.GetCellCenterWorld(cell), Quaternion.identity)
+                            Instantiate(furnishingPrefabs[5], tilemapGround.GetCellCenterWorld(cell), Quaternion.identity)
                         );
                         break;
 
                     case 4:
                         tilemapGround.SetTile(cell, groundTileGrass1);
                         spawnedObjects.Add(
-                            Instantiate(furnishingPrefabs[1], tilemapGround.GetCellCenterWorld(cell), Quaternion.identity)
+                            Instantiate(furnishingPrefabs[5], tilemapGround.GetCellCenterWorld(cell), Quaternion.identity)
                         );
                         break;
 
@@ -83,11 +83,11 @@ public class MapInstantiator : MonoBehaviour
                         tilemapGround.SetTile(cell, groundTileGrass1);
 
                         int prefabIndex = Random.value < 0.5f ? 1 : 2;
-                        prefabIndex = 3;
+                        prefabIndex = 1;
 
                         spawnedObjects.Add(
                             Instantiate(
-                                enemyPrefabs[prefabIndex],
+                                enemyPrefabs[1],
                                 tilemapGround.GetCellCenterWorld(cell),
                                 Quaternion.identity
                             )
