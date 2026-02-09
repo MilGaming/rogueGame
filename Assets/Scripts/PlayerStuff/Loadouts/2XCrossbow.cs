@@ -15,37 +15,36 @@ public GameObject DefenseProjectile;
     {
         ArrowProjectile = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<TwoXArrowLogic>().gameObject;
         DefenseProjectile = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<KnockBackDefense>().gameObject;
-        _attackSpeed = 0.5f;
         _lightDamage = 5f;
+        _defenseDuration = 0.1f;
     }
 
-    public override IEnumerator LightAttack(Vector2 mousePos)
+    public override IEnumerator LightAttack(Vector2 direction)
     {
        
-        yield return LightAttackAttack(mousePos);
-        yield return new WaitForSeconds(_attackSpeed);
+        yield return LightAttackAttack(direction);
     }
 
-    public IEnumerator LightAttackAttack(Vector2 mousePos)
+    public IEnumerator LightAttackAttack(Vector2 direction)
     {
+        yield return new WaitForSeconds(GetLightAttackWindup());
         GameObject arrowObj = UnityEngine.GameObject.Instantiate(ArrowProjectile, _player.transform.position, Quaternion.identity);
         var _arrowRenderer = arrowObj.GetComponent<SpriteRenderer>();
         var _arrowCollider = arrowObj.GetComponent<Collider2D>();
         _arrowRenderer.enabled = true;
         _arrowCollider.enabled = true;
         var arrow = arrowObj.GetComponent<TwoXArrowLogic>();
-        arrow.Init(_lightDamage, mousePos, false, false);
-        yield return null; 
+        arrow.Init(getLightDamage(), direction, false, false);
+        yield return new WaitForSeconds(GetLightAttackDuration() - GetLightAttackWindup());
     }
 
-    public override IEnumerator HeavyAttack(Vector2 mousePos)
+    public override IEnumerator HeavyAttack(Vector2 direction)
     {
           for(int i = 0; i<20; i++){
-          yield return LightAttackAttack(mousePos);
+          yield return LightAttackAttack(direction);
 
           yield return new WaitForSeconds(0.12f);
           }
-          yield return new WaitForSeconds(_attackSpeed);
     }
 
     public override IEnumerator LightDash(Vector2 direction, Transform transform, Vector2 mousePos)
@@ -56,12 +55,11 @@ public GameObject DefenseProjectile;
          yield return LightAttackAttack(mousePos);
     }
 
-    public override IEnumerator HeavyDash(Transform transform, Vector2 mousePos)
+    public override IEnumerator HeavyDash(Vector2 direction, Transform transform)
     {
         Debug.Log("Heavy Dash");
 
         Vector2 origin = transform.position;
-        Vector2 dir = getMouseDir(mousePos);
 
         //Debug.DrawLine(origin, origin + dir * 20f, Color.red, 2.5f);
 
@@ -70,7 +68,7 @@ public GameObject DefenseProjectile;
 
         RaycastHit2D hit = Physics2D.Raycast(
             origin,
-            dir,
+            direction,
             1000f,
             mask
         );
@@ -93,7 +91,7 @@ public GameObject DefenseProjectile;
                 counter += Time.deltaTime/dashDuration;
                 if (counter > 0.1f)
                 {
-                    yield return LightAttackAttack(-mousePos);
+                    yield return LightAttackAttack(-direction);
                     counter = 0f;
                 }
                 
@@ -106,7 +104,7 @@ public GameObject DefenseProjectile;
     }
 
 
-    public override IEnumerator Defense(Vector2 mousePos)
+    public override IEnumerator Defense(Vector2 direction)
     {
           GameObject defenseBlast = UnityEngine.GameObject.Instantiate(DefenseProjectile, _player.transform.position, Quaternion.identity);
           var _arrowRenderer = defenseBlast.GetComponent<SpriteRenderer>();
@@ -115,7 +113,7 @@ public GameObject DefenseProjectile;
           _arrowRenderer.enabled = true;
           _arrowCollider.enabled = true;
           var defenseArrow = defenseBlast.GetComponent<KnockBackDefense>();
-          defenseArrow.Init(mousePos);
+          defenseArrow.Init(direction);
           yield return new WaitForSeconds(0);
     }
 }
