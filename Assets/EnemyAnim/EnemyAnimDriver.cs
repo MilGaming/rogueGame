@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections;
 
 public class EnemyAnimDriver : MonoBehaviour
 {
@@ -16,20 +17,47 @@ public class EnemyAnimDriver : MonoBehaviour
     private static readonly int MoveType = Animator.StringToHash("MoveType");
     private static readonly int InAction = Animator.StringToHash("InAction");
 
+    private GuardianProtectZone guardianShield;
+
+
     void Awake()
     {
         enemy = GetComponent<Enemy>();
         lastPos = transform.position;
+
+        if (enemy._data.enemyType == EnemyType.Guardian)
+        {
+            guardianShield = GetComponentInChildren<GuardianProtectZone>();
+        }
     }
 
-    /// Call this EVERY FRAME
     public void Tick()
     {
         Vector2 vel = GetVelocity2D();
 
         bool locked = enemy.IsStunned || animator.GetBool(InAction);
+
         if (!locked)
-            FacePlayerOrKeepDefault();
+        {
+            if (enemy._data.enemyType == EnemyType.Guardian && guardianShield != null)
+            {
+                //face shield
+                Vector2 toShield = (Vector2)(guardianShield.transform.position - transform.position);
+                if (toShield.sqrMagnitude > 0.0001f)
+                    lookDir = toShield.normalized;
+            }
+            else
+            {
+                //face player
+                var player = enemy.GetPlayer();
+                if (player != null)
+                {
+                    Vector2 toPlayer = (Vector2)(player.transform.position - transform.position);
+                    if (toPlayer.sqrMagnitude > 0.0001f)
+                        lookDir = toPlayer.normalized;
+                }
+            }
+        }
 
         animator.SetFloat(LookX, lookDir.x);
         animator.SetFloat(LookY, lookDir.y);
@@ -84,4 +112,35 @@ public class EnemyAnimDriver : MonoBehaviour
     }
 
     public void SetInAction(bool inAction) => animator.SetBool(InAction, inAction);
+    private static readonly int Attack = Animator.StringToHash("Attack");
+    public Animator GetAnimator() => animator;
+    public void TriggerAttack() => animator.SetTrigger(Attack);
+
+    public IEnumerator RunAttackScaled(float duration, string stateTag = "Attack")
+    {
+        SetInAction(true);
+
+        float prevSpeed = animator.speed;
+
+        TriggerAttack();
+
+        while (animator.GetCurrentAnimatorStateInfo(0).IsTag(stateTag))
+            yield return null;
+
+        var infos = animator.GetCurrentAnimatorClipInfo(0);
+        float clipLen = (infos != null && infos.Length > 0 && infos[0].clip != null)
+            ? infos[0].clip.length
+            : 0f;
+
+        if (clipLen > 0.001f && duration > 0.001f)
+            animator.speed = clipLen / duration;
+        else
+            animator.speed = 1f;
+
+        yield return new WaitForSeconds(duration);
+
+        animator.speed = prevSpeed;
+        SetInAction(false);
+    }
+
 }
