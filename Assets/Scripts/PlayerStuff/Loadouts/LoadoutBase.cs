@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.U2D;
 using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class LoadoutBase
@@ -15,6 +16,7 @@ public class LoadoutBase
     protected float _HeavyDashDuration = 0.2f;
     protected float _lightDamage = 10f;
     protected float _heavyDamage = 20f;
+    protected float _heavyDashDistance = 12f;
 
     [Header("Right Click")]
     protected float _defCD = 2f;
@@ -23,7 +25,6 @@ public class LoadoutBase
     [Header("Space")]
     protected float _heavyDashCD = 5f;
     protected float _lightDashCD = 1f;
-
 
     protected Player _player;
 
@@ -64,13 +65,12 @@ public class LoadoutBase
     }
     public virtual IEnumerator HeavyDash(Vector2 direction, Transform transform)
     {
-        float dashDistance = 12f;
         float dashDuration = 0.2f;
 
         direction.Normalize();
 
         Vector3 start = transform.position;
-        Vector3 end = start + (Vector3)(direction * dashDistance);
+        Vector3 end = start + (Vector3)(direction * _heavyDashDistance);
 
         float t = 0f;
         while (t < 1f)
@@ -84,6 +84,7 @@ public class LoadoutBase
 
     public virtual IEnumerator Defense(Vector2 mousePos)
     {
+        Debug.Log("Do defense");
         yield return new WaitForSeconds(0.1f);
         Debug.Log("Do defense");
     }
@@ -119,6 +120,11 @@ public class LoadoutBase
         return _heavyDamage * _player.BaseDamageAmp + _heavyDamage * _player.DamageAmp;
     }
 
+    public float GetHeavyDashDistance()
+    {
+        return _heavyDashDistance;
+    }
+
     /*public float getAttackSpeed()
     {
         return _lightAttackDuration * _player.AttackSpeedIncrease > 0 ? _lightAttackDuration * _player.AttackSpeedIncrease : 0;
@@ -150,7 +156,7 @@ public class LoadoutBase
                      : GetLightAttackDuration();
     }
 
-    protected IEnumerator MeleeAttack(Vector2 dir, GameObject mySword, SwordHitbox mySwordHitbox, float distance, bool isHeavy)
+    protected IEnumerator MeleeAttack(Vector2 dir, GameObject mySword, SwordHitbox mySwordHitbox, float distance, bool isHeavy, float angleOffset = -90f)
     {
         if (mySwordHitbox == null) yield break;
 
@@ -162,7 +168,7 @@ public class LoadoutBase
         mySword.transform.position = pos;
 
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        mySword.transform.rotation = Quaternion.Euler(0f, 0f, angle-90f);
+        mySword.transform.rotation = Quaternion.Euler(0f, 0f, angle + angleOffset);
 
         if (isHeavy) {
             yield return new WaitForSeconds(GetHeavyAttackWindup());
