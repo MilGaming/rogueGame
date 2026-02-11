@@ -13,7 +13,7 @@ public class LoadoutState : MonoBehaviour
     [SerializeField] private Player player;
 
     [SerializeField] private PlayerAnimDriver anim;
-
+    [SerializeField] private PlayerIndicator indicator;
     private enum ActionType { AttackLight, AttackHeavy, DashLight, DashHeavy, Defense }
 
     private struct BufferedAction
@@ -37,10 +37,13 @@ public class LoadoutState : MonoBehaviour
     public float accel = 100f;
     public float decel = 100f;
 
+    private int loadoutNumber = 0;
+
     Vector2 vel;
     bool blockedMovement = false;
     bool blockedActions = false;
     bool doAnimationAnyway = false;
+    bool showIndicator = false;
 
 
     private float currentSpeed;
@@ -199,18 +202,21 @@ public class LoadoutState : MonoBehaviour
     {
         anim.EquipWeapon(WeaponId.Bow);
         loadout = new TwoCrossbow(player);
+        loadoutNumber = 1;
     }
 
     void OnLoadout2(InputAction.CallbackContext ctx)
     {
         anim.EquipWeapon(WeaponId.Shield);
         loadout = new SwordAndShield(player);
+        loadoutNumber = 2;
     }
 
     void OnLoadout3(InputAction.CallbackContext ctx)
     {
         anim.EquipWeapon(WeaponId.Dual);
         loadout = new DualSwords(player);
+        loadoutNumber = 3;
     }
 
     void OnAttack(InputAction.CallbackContext ctx)
@@ -232,6 +238,7 @@ public class LoadoutState : MonoBehaviour
         if (Time.time > nextHeavyDashTime)
         {
             chargeUpBar.SetChargeBar(true);
+            showIndicator = true;
         }
         dashLockRoutine = StartCoroutine(LockMovementAfterDelay());
     }
@@ -269,6 +276,8 @@ public class LoadoutState : MonoBehaviour
             time = Time.time
         });
         chargeUpBar.SetChargeBar(false);
+        showIndicator = false;
+        indicator.Deactivate();
     }
 
 
@@ -380,9 +389,18 @@ public class LoadoutState : MonoBehaviour
 
         if (!blockedMovement) transform.position += (Vector3)(vel * Time.deltaTime);
 
+        if (showIndicator && (Time.time - dashPressTime) >= heavyDashHoldTime)
+        {
+            indicator.Activate(getMouseDir(), loadout.GetHeavyDashDistance());
+        }
+
+
         // Facing direction (mouse -> player)
         if (blockedActions && !doAnimationAnyway) return;
         updatePlayerAni();
+
+
+
     }
 
     private void updatePlayerAni()
@@ -421,6 +439,11 @@ public class LoadoutState : MonoBehaviour
         return loadout;
     }
 
+    public int GetLoadoutNumber()
+    {
+        return loadoutNumber;
+    }
+
     public float GetDefCD()
     {
         if (nextDefTime - Time.time <= 0.0f)
@@ -438,5 +461,4 @@ public class LoadoutState : MonoBehaviour
         }
         else return nextHeavyDashTime - Time.time;
     }
-
 }
