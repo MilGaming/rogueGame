@@ -14,7 +14,7 @@ public class TwoCrossbow : LoadoutBase {
 
     public TwoCrossbow(Player player) : base(player)
     {
-        ArrowProjectile = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<TwoXArrowLogic>().gameObject;
+        ArrowProjectile = GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<Projectile>().gameObject;
 
         _knockBack = GameObject.FindGameObjectWithTag("DefArrow");
         if (_knockBack != null)
@@ -40,8 +40,8 @@ public class TwoCrossbow : LoadoutBase {
         var _arrowCollider = arrowObj.GetComponent<Collider2D>();
         _arrowRenderer.enabled = true;
         _arrowCollider.enabled = true;
-        var arrow = arrowObj.GetComponent<TwoXArrowLogic>();
-        arrow.Init(getLightDamage(), direction, false, false);
+        var arrow = arrowObj.GetComponent<Projectile>();
+        arrow.Init(getLightDamage(), direction, true);
         yield return null;
     }
 
