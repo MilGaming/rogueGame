@@ -9,8 +9,8 @@ public class LoadoutBase
 
     [Header("Left Click")]
     protected float _windupProcent = 0.4f;
-    protected float _lightAttackDuration = 0.5f;
-    protected float _heavyAttackDuration = 1f;
+    protected float _lightAttackDuration = 0.4f;
+    protected float _heavyAttackDuration = 0.9f;
     protected float _defenseDuration = 2f;
     protected float _lightDashDuration = 0.15f;
     protected float _HeavyDashDuration = 0.2f;
@@ -149,12 +149,6 @@ public class LoadoutBase
     public virtual float GetDefenseDuration() => _defenseDuration;
     public virtual float GetLightDashDuration() => _lightDashDuration;
     public virtual float GetHeavyDashDuration() => _HeavyDashDuration;
-
-    public virtual float GetAttackCooldown(bool heavy)
-    {
-        return heavy ? GetHeavyAttackDuration()
-                     : GetLightAttackDuration();
-    }
 
     protected IEnumerator MeleeAttack(Vector2 dir, GameObject mySword, SwordHitbox mySwordHitbox, float distance, bool isHeavy, float angleOffset = -90f)
     {
