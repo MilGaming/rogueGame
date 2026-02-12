@@ -46,12 +46,10 @@ public class Player : MonoBehaviour
 
         if (_shield.isParrying && shieldIntercepts)
         {
-            // Successful parry: negate damage + stun attacker (example)
             var enemy = attacker.GetComponentInParent<Enemy>();
-            if (enemy != null)
+            if (enemy != null && enemy._data.enemyType != EnemyType.Ranged)
             {
                 enemy.ApplyStun(_parryStunDuration);
-                Debug.Log("Stunned");
             }
             return;
         }

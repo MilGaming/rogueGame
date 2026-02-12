@@ -319,7 +319,8 @@ MonoBehaviour:
   _data: {fileID: 11400000, guid: a6ac537dca4f7fd4282b9c66b2bc6901, type: 2}
   _agent: {fileID: 4762585678125782601}
   _attack: {fileID: 2066148114121953172}
-  maxDashLenght: 0
+  maxDashLenght: 5
+  dashCooldown: 3
   damageFlash: {fileID: 538505349978157586}
   _currentHealth: 0
 --- !u!114 &8131901137409769011
