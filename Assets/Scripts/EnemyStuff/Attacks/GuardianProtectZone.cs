@@ -35,7 +35,7 @@ public class GuardianProtectZone : DamageZone
             healShield(Time.deltaTime * healRate);
         }
         if (!enemy.IsStunned) {
-            UpdateFacingTransform(1.3f, 40f);
+            UpdateFacingTransform(1.0f, 40f);
         }
     }
     protected override void OnTriggerEnter2D(Collider2D other)
@@ -131,8 +131,11 @@ public class GuardianProtectZone : DamageZone
             Mathf.Sin(newAngle * Mathf.Deg2Rad)
         ) * fixedDistance;
 
-        transform.position = (Vector2)parent.position + offset;
-        transform.rotation = Quaternion.Euler(0f, 0f, newAngle + 90f);
+        transform.localPosition = offset;
+
+        // Rotate (add +180f here if you need to flip the arc)
+        transform.localRotation = Quaternion.Euler(0f, 0f, newAngle + 90f + 180f);
+
     }
 
     public void TakeDamage(float damage)
