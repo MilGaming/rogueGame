@@ -18,7 +18,7 @@ public class AttackSpeedBoostLoot : Loot
     {
         if (other.CompareTag("Player"))
         {
-            //player.IncreaseAttackSpeed(attackSpeedIncreasePercent);
+            player.IncreaseAttackSpeed(attackSpeedIncreasePercent);
             telemetryManager.LootPickedUp();
             Destroy(gameObject);
         }

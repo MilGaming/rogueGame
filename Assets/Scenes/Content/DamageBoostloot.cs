@@ -17,7 +17,7 @@ public class DamageBoostLoot : Loot
     {
         if (other.CompareTag("Player"))
         {
-            //player.IncreaseDamage(damageIncreasePercent, permanent);
+            player.IncreaseDamage(damageIncreasePercent);
             base.telemetryManager.LootPickedUp();
             Destroy(gameObject);
         }
