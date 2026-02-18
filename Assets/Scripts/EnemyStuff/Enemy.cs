@@ -14,8 +14,6 @@ public class Enemy : MonoBehaviour
     [SerializeField] private float dashCooldown = 3.0f;
     [SerializeField] private DamageFlash damageFlash;
 
-    private Collider2D bodyCol2D;        // assign your enemy body collider here
-
     [SerializeField] private EnemyAnimDriver animDriver;
 
     private Player _player;
@@ -34,7 +32,6 @@ public class Enemy : MonoBehaviour
     public Vector3 HomePosition { get; private set; }
     public float WanderRadius => _data.wanderRadius;
     public Vector2 WanderWaitRange => _data.wanderWaitRange;
-    private readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
     bool _dead;
 
     private void OnEnable()
@@ -57,7 +54,6 @@ public class Enemy : MonoBehaviour
         _nextDashTime = Time.time;
         canProtect = true;
         RemainingStunDuration = 0f;
-        bodyCol2D = GetComponent<Collider2D>();
     }
 
     private void Update()
@@ -67,7 +63,7 @@ public class Enemy : MonoBehaviour
         {
             RemainingStunDuration -= Time.deltaTime;
         }
-        if (canDash && maxDashLenght > 0f && !IsStunned && !attacking && _player != null)
+        if (canDash && maxDashLenght > 0f && !IsStunned && _player != null && !(_data.enemyType == EnemyType.Assassin && attacking))
         {
             int mask = LayerMask.GetMask("PlayerAttack", "Player");
             Vector2 enemyPos = transform.position;
@@ -176,103 +172,72 @@ public class Enemy : MonoBehaviour
 
     private IEnumerator DashRoutine()
     {
-        // Safety
-        if (_player == null || bodyCol2D == null)
-            yield break;
+        _agent.isStopped = true;
+        _agent.enabled = false;
 
-        // Disable agent so it doesn't fight our manual movement
-        bool agentWasEnabled = _agent != null && _agent.enabled;
-        if (agentWasEnabled)
-        {
-            _agent.isStopped = true;
-            _agent.enabled = false;
-        }
-
+        float dashDistance = 0f;
         float dashDuration = 0.15f;
 
-        Vector2 origin = transform.position;
+        var direction = (Vector2)(transform.position - _player.transform.position);
+        var baseDirection = direction.normalized;
+        var finalEnd = Vector3.zero;
 
-        // You were using "away from player" as base direction
-        Vector2 baseDir = (origin - (Vector2)_player.transform.position);
-        if (baseDir.sqrMagnitude < 0.0001f)
-            baseDir = Vector2.right;
-        baseDir.Normalize();
+        direction.Normalize();
+        Vector2 start = (Vector2)transform.position;
 
-        // Build a ContactFilter once
-        var filter = new ContactFilter2D();
-        filter.SetLayerMask(LayerMask.GetMask("Wall"));
-        filter.useTriggers = false;
+        start = start + direction * 1.5f;
+        Vector2 end = start + (direction * maxDashLenght);
 
-        float bestScore = float.NegativeInfinity;
-        Vector2 bestEnd = origin;
-
-        // Search angles; pick the candidate end that maximizes distance from player (your heuristic)
         for (int i = 0; i < 360; i++)
         {
-            float angle = (360f * i) / 360;
-            Vector2 dir = (Vector2)(Quaternion.Euler(0, 0, angle) * baseDir);
-            dir.Normalize();
+            direction = ((Vector2)(Quaternion.Euler(0, 0, i) * baseDirection)).normalized;
+            start = (Vector2)transform.position + direction * 0.01f;
+            end = (Vector2)transform.position + (direction * maxDashLenght);
+            int mask = LayerMask.GetMask("Wall");
 
-            float allowed = maxDashLenght;
+            RaycastHit2D hit = Physics2D.Raycast(
+                start,
+                direction,
+                maxDashLenght,
+                mask
+            );
 
-            // Sweep the ENEMY COLLIDER along dir, not a ray
-            int count = bodyCol2D.Cast(dir, filter, _hits, maxDashLenght);
-
-            if (count > 0)
+            if (hit.collider != null)
             {
-                float nearest = float.PositiveInfinity;
-                for (int h = 0; h < count; h++)
-                    nearest = Mathf.Min(nearest, _hits[h].distance);
-
-                // Pull back slightly so we don't end up in the wall
-                allowed = Mathf.Max(0f, nearest - 0.05f);
+                end = hit.point - direction * 0.1f;
             }
-
-            Vector2 candidateEnd = origin + dir * allowed;
-
-            float score = Vector2.Distance((Vector2)_player.transform.position, candidateEnd);
-            if (score > bestScore)
+            var distance = Vector2.Distance((Vector2)_player.transform.position, end);
+            if (distance > dashDistance)
             {
-                bestScore = score;
-                bestEnd = candidateEnd;
+                dashDistance = distance;
+                finalEnd = (Vector3)end;
             }
         }
+        start = transform.position;
+        end = finalEnd;
 
-        // Optional: abort dash if too short (your original behavior)
-        if (Vector2.Distance(origin, bestEnd) < 4f)
-        {
-            if (agentWasEnabled)
-            {
-                _agent.enabled = true;
-                _agent.Warp(transform.position); // keep agent synced
-                _agent.isStopped = false;
-            }
-            _nextDashTime = Time.time; // allow retry
-            yield break;
-        }
-
-        // Move in fixed steps (don’t use Update-time delta here)
-        float t = 0f;
-        Vector2 start = origin;
-        Vector2 end = bestEnd;
-
-        while (t < 1f)
-        {
-            t += Time.fixedDeltaTime / dashDuration;
-            Vector2 pos = Vector2.Lerp(start, end, t);
-            transform.position = pos;
-            yield return new WaitForFixedUpdate();
-        }
-
-        transform.position = end;
-
-        // Re-enable agent and sync it to our new position
-        if (agentWasEnabled)
+        if (Vector2.Distance((Vector2)transform.position, end) < 4.0f)
         {
             _agent.enabled = true;
-            _agent.Warp(transform.position);
-            _agent.isStopped = false;
+            _nextDashTime = Time.time;
         }
+        else
+        {
+
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.deltaTime / dashDuration;
+                transform.position = Vector3.Lerp(start, end, t);
+                yield return null;
+            }
+            //transform.position = end;
+            _agent.Warp(transform.position);
+            _agent.enabled = true;
+            _agent.isStopped = false;
+
+        }
+
     }
 
 

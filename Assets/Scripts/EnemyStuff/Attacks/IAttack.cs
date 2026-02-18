@@ -49,8 +49,8 @@ public abstract class IAttack : MonoBehaviour
         {
 
             yield return BasicAttack();
-
             yield return _anim.RunAction(_attackSpeed, Animator.StringToHash("Attack"));
+            _nextReadyTime = Time.time + _attackSpeed;
         }
 
     }
