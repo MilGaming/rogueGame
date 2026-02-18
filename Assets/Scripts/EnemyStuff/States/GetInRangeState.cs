@@ -33,15 +33,6 @@ public class GetInRangeState : BaseState
             {
                 _agent.SetDestination(hit.position);
             }
-            else
-            {
-                _agent.SetDestination(playerPos);
-            }
-        }
-        else
-        {
-            // fallback
-            _agent.SetDestination(playerPos);
         }
 
     }

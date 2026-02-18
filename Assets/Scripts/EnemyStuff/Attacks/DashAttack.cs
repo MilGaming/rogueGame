@@ -20,7 +20,7 @@ public class DashAttack : IAttack, ICancelableAttack
     {
         damageZone.Activate(_damage, 0.2f, _attackDelay);
 
-        float trackTime = _attackDelay * 0.5f;
+        float trackTime = _attackDelay * 0.7f;
         float elapsed = 0f;
 
         while (elapsed < trackTime)
@@ -50,7 +50,6 @@ public class DashAttack : IAttack, ICancelableAttack
 
         // Opening
         GetComponentInParent<Enemy>().ApplyStun(2f);
-        _nextReadyTime = Time.time + _attackSpeed;
     }
 
 

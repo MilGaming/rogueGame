@@ -20,7 +20,6 @@ public class BombAttack : IAttack
         var bombObj = Instantiate(bombPrefab, transform.position, Quaternion.identity);
         var bomb = bombObj.GetComponent<Bomb>();
         bomb.GetThrown(_player.transform.position, speed, _attackDelay, _damage);
-        _nextReadyTime = Time.time + _attackSpeed;
     }
 
 }

@@ -22,7 +22,6 @@ public class OutflankState : BaseState
         timer = 0f;
         _orbitSign = (Random.value < 0.5f) ? -1f : 1f;
         distanceToPlayer = Random.Range(4f, 8f);
-        _enemy._data.attackSpeed = Random.Range(_enemy._data.attackSpeed, _enemy._data.attackSpeed + 2f);
     }
 
     public override void Execute()
