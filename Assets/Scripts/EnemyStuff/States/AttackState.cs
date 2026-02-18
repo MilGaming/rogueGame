@@ -38,7 +38,7 @@ public class AttackState : BaseState
     private IEnumerator AttackFlow()
     {
         yield return _enemy.GetAttack().Attack();
-        _enemy.attacking = true;
+        _enemy.attacking = false;
         _attackInProgress = false;
         _attackCoroutine = null;
     }

@@ -35,7 +35,7 @@ public class LevelManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        string path = Path.Combine(Application.streamingAssetsPath, "combArchive_maps.json");
+        string path = Path.Combine(Application.streamingAssetsPath, "furnArchive_maps.json");
         var archive = MapArchiveExporter.LoadArchiveFromJson(path);
         //var archive = MapArchiveExporter.LoadArchiveFromJson("furnArchive_maps.json");
         //var archive = MapArchiveExporter.LoadArchiveFromJson("combArchive_maps.json");
@@ -52,6 +52,7 @@ public class LevelManager : MonoBehaviour
                 Vector2 geoBehavior = new Vector2(map.geoBehavior[0], map.geoBehavior[1]);
                 Vector2 enemBehavior = new Vector2(map.enemyBehavior[0], map.enemyBehavior[1]);
                 Vector2 furnBehavior = new Vector2(map.furnBehavior[0], map.furnBehavior[1]);
+                finalMaps.Enqueue(map);
                 if (map.fitness > 1f && !takenGeoBehaviors.Contains(geoBehavior) && !takenEnemBehaviors.Contains(enemBehavior) && !takenFurnBehaviors.Contains(furnBehavior))
                 {
 
@@ -68,6 +69,7 @@ public class LevelManager : MonoBehaviour
         }
 
         mapInstantiator.makeMap(MapArchiveExporter.MapFromDto(finalMaps.Dequeue()));
+        //mapInstantiator.makeTestMap();
         _hasSpawnPos = false;
         CacheSpawnAndHookPlayer();
     }

@@ -16,12 +16,11 @@ public class RangedAttack : IAttack
     }*/
     protected override IEnumerator BasicAttack()
     {
-        yield return new WaitForSeconds(_attackDelay);
         Vector3 dir = (_player.transform.position - transform.position).normalized;
         Vector3 spawnPos = transform.position + dir * 0.5f;
         var proj = Instantiate(_projectilePrefab, spawnPos, Quaternion.identity);
         proj.SetInstigator(gameObject);
         proj.Init(_damage, dir, false);
-        _nextReadyTime = Time.time + _attackSpeed;
+        yield return null;
     }
 }
