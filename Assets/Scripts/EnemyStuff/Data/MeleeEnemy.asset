@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89aa2cb65b170a74b8983e4e8c387720, type: 3}
   m_Name: MeleeEnemy
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  chaseRange: 50
+  chaseRange: 20
   attackRange: 2
   health: 30
   attackSpeed: 1
   attackDelay: 0.4
   damage: 10
+  enemyType: 0
   wanderRadius: 4
   wanderWaitRange: {x: 2, y: 4}

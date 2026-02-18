@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -31,7 +32,6 @@ public class Enemy : MonoBehaviour
     public Vector3 HomePosition { get; private set; }
     public float WanderRadius => _data.wanderRadius;
     public Vector2 WanderWaitRange => _data.wanderWaitRange;
-
     bool _dead;
 
     private void OnEnable()
@@ -63,7 +63,7 @@ public class Enemy : MonoBehaviour
         {
             RemainingStunDuration -= Time.deltaTime;
         }
-        if (canDash && maxDashLenght > 0f && !IsStunned && !attacking)
+        if (canDash && maxDashLenght > 0f && !IsStunned && _player != null && !(_data.enemyType == EnemyType.Assassin && attacking))
         {
             int mask = LayerMask.GetMask("PlayerAttack", "Player");
             Vector2 enemyPos = transform.position;
@@ -172,25 +172,27 @@ public class Enemy : MonoBehaviour
 
     private IEnumerator DashRoutine()
     {
+        _agent.isStopped = true;
         _agent.enabled = false;
+
         float dashDistance = 0f;
         float dashDuration = 0.15f;
 
-        var direction = (Vector2)(transform.position -_player.transform.position);
+        var direction = (Vector2)(transform.position - _player.transform.position);
         var baseDirection = direction.normalized;
         var finalEnd = Vector3.zero;
-        
-        direction.Normalize();
-        Vector2 start = (Vector2) transform.position;
 
-        start = start + direction*1.5f;
+        direction.Normalize();
+        Vector2 start = (Vector2)transform.position;
+
+        start = start + direction * 1.5f;
         Vector2 end = start + (direction * maxDashLenght);
-        
-        for (int i=0; i<360; i++)
+
+        for (int i = 0; i < 360; i++)
         {
-            direction = ((Vector2) (Quaternion.Euler(0, 0, i) * baseDirection)).normalized;
-            start = (Vector2) transform.position - baseDirection*1.5f;
-            end = (Vector2) transform.position + (direction * maxDashLenght);
+            direction = ((Vector2)(Quaternion.Euler(0, 0, i) * baseDirection)).normalized;
+            start = (Vector2)transform.position + direction * 0.01f;
+            end = (Vector2)transform.position + (direction * maxDashLenght);
             int mask = LayerMask.GetMask("Wall");
 
             RaycastHit2D hit = Physics2D.Raycast(
@@ -202,8 +204,8 @@ public class Enemy : MonoBehaviour
 
             if (hit.collider != null)
             {
-                end = hit.point;
-            } 
+                end = hit.point - direction * 0.1f;
+            }
             var distance = Vector2.Distance((Vector2)_player.transform.position, end);
             if (distance > dashDistance)
             {
@@ -213,26 +215,31 @@ public class Enemy : MonoBehaviour
         }
         start = transform.position;
         end = finalEnd;
-        
+
         if (Vector2.Distance((Vector2)transform.position, end) < 4.0f)
         {
             _agent.enabled = true;
             _nextDashTime = Time.time;
         }
-        else {
-
-        float t = 0f;
-        while (t < 1f)
+        else
         {
-            t += Time.deltaTime / dashDuration;
-            transform.position = Vector3.Lerp(start, end, t);
-            yield return null;
+
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.deltaTime / dashDuration;
+                transform.position = Vector3.Lerp(start, end, t);
+                yield return null;
+            }
+            //transform.position = end;
+            _agent.Warp(transform.position);
+            _agent.enabled = true;
+            _agent.isStopped = false;
+
         }
-        transform.position = end;
-        _agent.enabled = true;
-        }
-        
+
     }
+
 
     public void SetDeathEffect(Action deathEffect)
     {

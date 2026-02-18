@@ -16,8 +16,7 @@ public class MeleeAttack : IAttack, ICancelableAttack
     protected override IEnumerator BasicAttack() {
         TransformFacePlayer(damageZone.transform, 1.3f);
         damageZone.Activate(_damage, 0.1f, _attackDelay);
-        yield return new WaitForSeconds(0.1f + _attackDelay);
-        _nextReadyTime = Time.time + _attackSpeed;
+        yield return new WaitForSeconds(_attackDelay);
     }
 
     public void CancelAttack()
