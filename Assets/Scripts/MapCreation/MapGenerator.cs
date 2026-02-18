@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
+using Unity.Collections;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -48,7 +49,7 @@ public class MapGenerator : MonoBehaviour
 
     void OnEnable()
     {
-        placeObjects.action.Enable();
+        //placeObjects.action.Enable();
         remakeMap.action.Enable();
         mutateMap.action.Enable();
         mutatePlacements.action.Enable();
@@ -64,7 +65,7 @@ public class MapGenerator : MonoBehaviour
     {
         map = placeFurnishing(map);
         map = placeEnemies(map);
-        mapInstantiator.makeMap(map.mapArray);
+        //mapInstantiator.makeMap(map.mapArray);
         return map;
     }
 
@@ -122,7 +123,13 @@ public class MapGenerator : MonoBehaviour
             map = placeRandomRoom(map);
         }
 
-        return buildMapFromComponents(map);
+        map = buildMapFromComponents(map);
+        map = PlaceCorners(map);
+        if (map.shortestPath!= null)
+        {
+            return SetShortestPathTiles(map);
+        }
+        return map;
     }
 
     MapInfo buildMapFromComponents(MapInfo map)
@@ -159,10 +166,10 @@ public class MapGenerator : MonoBehaviour
         {
             map.shortestPath = FindPathAStar(map, map.playerStartPos.Value, map.endPos.Value);
 
-            /*if (map.shortestPath == null)
+            if (map.shortestPath == null)
             {
                 Debug.Log("No path found between player start and end!");
-            }*/
+            }
         }
 
 
@@ -204,6 +211,18 @@ public class MapGenerator : MonoBehaviour
         return map;
     }
 
+    void PlacePattern(MapInfo map, Vector2Int pattern, Vector2Int start)
+    {
+        for (int i = 0; i < pattern.x; i++)
+        {
+            for (int j = 0; j < pattern.y; j++)
+            {
+                map.mapArray[start.x+i, start.y+j] = 1;
+            }
+        }
+        
+    }
+
     MapInfo placeRandomRoom(MapInfo map)
     {
         Vector2Int roomSize = new Vector2Int(
@@ -212,8 +231,8 @@ public class MapGenerator : MonoBehaviour
         );
 
         Vector2Int roomPlacement = new Vector2Int(
-            UnityEngine.Random.Range(1, mapSize.x - roomSize.x),
-            UnityEngine.Random.Range(1, mapSize.y - roomSize.y)
+            UnityEngine.Random.Range(2, mapSize.x - roomSize.x-2),
+            UnityEngine.Random.Range(2, mapSize.y - roomSize.y-2)
         );
 
         Room room = new Room
@@ -338,7 +357,7 @@ public class MapGenerator : MonoBehaviour
 
             // place funrnishing
             int furnishType = UnityEngine.Random.Range(0, amountOfFurnishingTypes);
-            map.furnishing.Add((pos, 3+furnishType));
+            map.furnishing.Add((pos, 11+furnishType));
         }
 
         foreach (var (p, t) in map.furnishing)
@@ -432,9 +451,16 @@ public class MapGenerator : MonoBehaviour
         }
         // rebuild map
         map = buildMapFromComponents(map);
+        map = PlaceCorners(map);
+        if (map.shortestPath != null)
+        {
+            map = SetShortestPathTiles(map);
+        }
+        
         // validate existing enemies and furnishing
         //map = ValidateEnemiesAgainstMap(map);
         //map = ValidateFurnishingAgainstMap(map);
+        
         return map;
     }
 
@@ -559,12 +585,26 @@ public class MapGenerator : MonoBehaviour
             while (x != to.x)
             {
                 SetFloorAndAutoWalls(map, x, y, true);
+                if (to.y > y) {
+                    SetFloorAndAutoWalls(map, x, y+1, true);
+                }
+                else
+                {
+                    SetFloorAndAutoWalls(map, x, y-1, true);
+                }
                 x += (to.x > x) ? 1 : -1;
-            }
             while (y != to.y)
             {
                 SetFloorAndAutoWalls(map, x, y, true);
+                if (to.x > x) {
+                    SetFloorAndAutoWalls(map, x+1, y, true);
+                }
+                else
+                {
+                    SetFloorAndAutoWalls(map, x-1,y, true);
+                }
                 y += (to.y > y) ? 1 : -1;
+            }
             }
         }
         else
@@ -572,11 +612,25 @@ public class MapGenerator : MonoBehaviour
             while (y != to.y)
             {
                 SetFloorAndAutoWalls(map, x, y, true);
+                if (to.x > x) {
+                    SetFloorAndAutoWalls(map, x+1, y, true);
+                }
+                else
+                {
+                    SetFloorAndAutoWalls(map, x-1,y, true);
+                }
                 y += (to.y > y) ? 1 : -1;
             }
             while (x != to.x)
             {
                 SetFloorAndAutoWalls(map, x, y, true);
+                if (to.y > y) {
+                    SetFloorAndAutoWalls(map, x, y+1, true);
+                }
+                else
+                {
+                    SetFloorAndAutoWalls(map, x, y-1, true);
+                }
                 x += (to.x > x) ? 1 : -1;
             }
         }
@@ -625,19 +679,165 @@ public class MapGenerator : MonoBehaviour
         }
 
         // 4-neighbor walls
-        TrySetWall(map, x + 1, y);
-        TrySetWall(map, x - 1, y);
-        TrySetWall(map, x, y + 1);
-        TrySetWall(map, x, y - 1);
+        TrySetWall(map, x + 1, y, true);
+        TrySetWall(map, x - 1, y, true);
+        TrySetWall(map, x, y + 1, false);
+        TrySetWall(map, x, y - 1, false);
+        //TrySetWall(map, x + 1, y-1, false);
+        //TrySetWall(map, x - 1, y+1, true);
+
+
     }
 
-    void TrySetWall(MapInfo map, int x, int y)
+    void TrySetWall(MapInfo map, int x, int y, bool south)
     {
         if (x < 0 || y < 0 || x >= mapSize.x || y >= mapSize.y)
             return;
 
-        if (map.mapArray[x, y] == 0)   // only turn empty into wall
-            map.mapArray[x, y] = 2;
+        /*if (map.mapArray[x, y] == 3 || map.mapArray[x, y] == 4)
+        {
+            // only turn empty into wall
+            map.mapArray[x, y] = 5;
+            
+        }*/
+        if (map.mapArray[x, y] == 0 || map.mapArray[x, y] == 3 || map.mapArray[x, y] == 4)
+        {
+            // only turn empty into wall
+            if (south)
+            {
+                map.mapArray[x, y] = 3;
+            }
+            else
+            {
+                map.mapArray[x, y] = 4;
+            }
+            
+        }   
+        
+    }
+
+    MapInfo PlaceCorners(MapInfo map)
+    {
+        for (int x = 0; x < map.mapArray.GetLength(0); x++)
+        {
+            for (int y = 0; y < map.mapArray.GetLength(1); y++)
+            {
+                if (map.mapArray[x,y] != 0 && map.mapArray[x,y] != 3 && map.mapArray[x,y] != 4 && map.mapArray[x,y] != 5)
+                {
+                    if (x-1 > 0 && y-1 > 0 && x+2 < mapSize.x && y+2 < mapSize.y)
+                    {
+                        //Bottom outward corner
+                        if((map.mapArray[x-1,y] == 3 || map.mapArray[x-1,y] == 4) && (map.mapArray[x,y-1] == 4 || map.mapArray[x,y-1] == 3))
+                        {
+                            TrySetCorner(map, x-1, y-1);
+                        }
+
+                        
+
+                        //Top outward corner handled by walls by default
+
+                        //Left outward corner
+                        if(map.mapArray[x,y+1] == 4 && map.mapArray[x-1,y] == 3)
+                        {
+                            TrySetWall(map, x-1, y +1, false);
+                        }
+
+                        //Left outward corner edge case
+                        if(map.mapArray[x,y+1] == 3 && map.mapArray[x-1,y] == 3)
+                        {
+                            TrySetWall(map, x-1, y +1, false);
+                        }
+
+                        //Right outward corner
+                        if(map.mapArray[x,y-1] == 4 && map.mapArray[x+1,y] == 3)
+                        {
+                            TrySetWall(map, x+1, y -1, true);
+                        }
+                        //Right outward corner edge case
+                        if(map.mapArray[x,y-1] == 4 && map.mapArray[x+1,y] == 4)
+                        {
+                            TrySetWall(map, x+1, y -1, true);
+                        }
+
+                        //Bottom inward corner, should be handled by default
+
+                        //Top inward corner
+                        if(map.mapArray[x+1,y] == 1 && map.mapArray[x,y+1] == 1)
+                        {   
+                            
+                            if(map.mapArray[x+1,y+1] == 3 || map.mapArray[x+1,y+1] == 4)
+                            {
+                                TrySetCorner(map, x+1, y +1);
+                            }
+                        }
+                        
+
+                        //Left inward corner, should be the same as right outward corner if edge
+
+                        //Left inward corner when not edge
+                        if((map.mapArray[x-1,y] == 1 || map.mapArray[x-1,y] == 2) && (map.mapArray[x,y+1] == 1 || map.mapArray[x,y+1] == 2))
+                        {
+                            if(map.mapArray[x-1,y+1] == 3 || map.mapArray[x-1,y+1] == 4)
+                            {
+                                map.mapArray[x-1,y+1] = 31;
+                            }
+                            if(map.mapArray[x-1, y+2] == 0)
+                            {
+                                TrySetWall(map, x-1,y+2, true);
+                            }
+                        }
+                        
+                        //Right inward corner
+                        if((map.mapArray[x+1,y] == 1 || map.mapArray[x+1,y] == 2) && (map.mapArray[x,y-1] == 1 || map.mapArray[x,y-1] == 2))
+                            {
+                                if(map.mapArray[x+1,y-1] == 3 || map.mapArray[x+1,y-1] == 4)
+                                {
+                                    map.mapArray[x+1,y-1] = 32;
+                                    if(map.mapArray[x+2, y-1] == 0)
+                                    {
+                                        TrySetWall(map, x+2,y-1, true);
+                                    }
+                                    
+                                }
+                            }
+
+                        //Weird ass edge cases
+                        if ((map.mapArray[x-1,y] == 1 || map.mapArray[x-1,y] == 2) && (map.mapArray[x+1,y] == 1 || map.mapArray[x+1,y] == 2))
+                        {
+                            if(map.mapArray[x,y+1] == 3 && map.mapArray[x+1,y+1] == 4)
+                            {
+                                TrySetCorner(map, x, y+1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        map.mapArray[map.playerStartPos.Value.x, map.playerStartPos.Value.y] = 100;
+        map.mapArray[map.endPos.Value.x, map.endPos.Value.y] = 99;
+        return map;
+    }
+
+    void TrySetCorner(MapInfo map, int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= mapSize.x || y >= mapSize.y)
+            return;
+        if (map.mapArray[x,y] != 100 || map.mapArray[x,y] != 1){
+                map.mapArray[x,y] = 5;
+        }
+    }
+
+    MapInfo SetShortestPathTiles(MapInfo map)
+    {
+        foreach (var tile in map.shortestPath)
+        {
+            if(map.mapArray[tile.x, tile.y] == 1)
+            {
+                 map.mapArray[tile.x, tile.y] = 2;
+            }
+           
+        }
+        return map;
     }
 
     IEnumerable<Vector2Int> GetNeighbors(Vector2Int p)
@@ -679,7 +879,11 @@ public class MapGenerator : MonoBehaviour
 
             foreach (var neighbor in GetNeighbors(current))
             {
-                if (map.mapArray[neighbor.x, neighbor.y] == 2)
+                if(neighbor.x >= map.mapSize || neighbor.x < 0 || neighbor.y >= map.mapSize || neighbor.y < 0)
+                {
+                    continue;
+                }
+                if (map.mapArray[neighbor.x, neighbor.y] == 3 || map.mapArray[neighbor.x, neighbor.y] == 4 || map.mapArray[neighbor.x, neighbor.y] == 5)
                     continue;
 
                 int tentativeG = gScore[current] + 1; // cost between neighbors is 1
@@ -699,7 +903,7 @@ public class MapGenerator : MonoBehaviour
         return null;
     }
 
-    int Heuristic(Vector2Int a, Vector2Int b)
+    int     Heuristic(Vector2Int a, Vector2Int b)
     {
         // Manhattan distance works well on 4-directional grids
         return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
@@ -892,7 +1096,6 @@ public class MapGenerator : MonoBehaviour
             remaining.Remove(bestToComp);
         }
     }
-
 }
 
 public class MapInfo
@@ -1026,5 +1229,12 @@ public struct Room
     public int YMin => placement.y;
     public int XMax => placement.x + size.x - 1;
     public int YMax => placement.y + size.y - 1;
+}
+
+
+public struct Pattern
+{
+    public Vector2Int size;
+    public int[,] patternType;
 }
 
