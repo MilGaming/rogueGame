@@ -7,6 +7,8 @@ public class LevelManager : MonoBehaviour
 {
 
     [SerializeField] MapInstantiator mapInstantiator;
+
+    [SerializeField] TelemetryManager telemetryManager;
     public Queue<MapArchiveExporter.MapDTO> finalMaps;
     private List<Vector2> takenGeoBehaviors;
     private List<Vector2> takenEnemBehaviors;
@@ -26,6 +28,9 @@ public class LevelManager : MonoBehaviour
     {
         if (mapInstantiator == null)
             mapInstantiator = FindFirstObjectByType<MapInstantiator>();
+        
+        if (telemetryManager == null)
+            telemetryManager = FindFirstObjectByType<TelemetryManager>();
 
         // ensure collider is a trigger so OnTriggerEnter2D fires
         var c = GetComponent<Collider2D>();
@@ -72,6 +77,7 @@ public class LevelManager : MonoBehaviour
         //mapInstantiator.makeTestMap();
         _hasSpawnPos = false;
         CacheSpawnAndHookPlayer();
+        telemetryManager.StartTimer();
     }
 
     void CacheSpawnAndHookPlayer()
@@ -99,12 +105,14 @@ public class LevelManager : MonoBehaviour
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
         }
+        telemetryManager.PlayerDied();
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
         // Trigger new run
+        telemetryManager.UploadData();
         mapInstantiator.makeMap(MapArchiveExporter.MapFromDto(finalMaps.Dequeue()));
 
         _hasSpawnPos = false;

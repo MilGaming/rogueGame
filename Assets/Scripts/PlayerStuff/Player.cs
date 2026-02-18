@@ -269,6 +269,11 @@ public class Player : MonoBehaviour
         return _isInvinsible;
     }
 
+    void CurrentLoadout()
+    {
+        
+    }
+
     public float DamageMultiplier => _damageMultiplier;
     public float AttackSpeedMultiplier => _attackSpeedMultiplier;
     public float GetMoveSpeed() {
