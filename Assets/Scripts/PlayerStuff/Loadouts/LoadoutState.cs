@@ -92,6 +92,8 @@ public class LoadoutState : MonoBehaviour
         currentSpeed = player.GetMoveSpeed();
         chargeUpBar = GameObject.FindWithTag("ChargeBar").GetComponent<ChargeUp>();
         nextHeavyDashTime = Time.time;
+        telemetryManager = FindFirstObjectByType<TelemetryManager>();
+        telemetryManager.SetLoadOut(2);
 
     }
 
