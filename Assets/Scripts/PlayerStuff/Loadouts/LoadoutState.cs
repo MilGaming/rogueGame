@@ -26,6 +26,8 @@ public class LoadoutState : MonoBehaviour
 
     private ChargeUp chargeUpBar;
 
+    TelemetryManager telemetryManager;
+
     [Header("Input Buffer")]
     [SerializeField] private float bufferWindow = 0.20f; // 200ms is typical
     private readonly Queue<BufferedAction> buffer = new Queue<BufferedAction>(4);
@@ -236,6 +238,7 @@ public class LoadoutState : MonoBehaviour
         anim.EquipWeapon(WeaponId.Bow);
         loadout = new TwoCrossbow(player);
         loadoutNumber = 1;
+        telemetryManager.SetLoadOut(loadoutNumber);
     }
 
     void OnLoadout2(InputAction.CallbackContext ctx)
@@ -243,6 +246,7 @@ public class LoadoutState : MonoBehaviour
         anim.EquipWeapon(WeaponId.Shield);
         loadout = new SwordAndShield(player);
         loadoutNumber = 2;
+        telemetryManager.SetLoadOut(loadoutNumber);
     }
 
     void OnLoadout3(InputAction.CallbackContext ctx)
@@ -250,6 +254,7 @@ public class LoadoutState : MonoBehaviour
         anim.EquipWeapon(WeaponId.Dual);
         loadout = new DualSwords(player);
         loadoutNumber = 3;
+        telemetryManager.SetLoadOut(loadoutNumber);
     }
 
     void OnAttackStarted(InputAction.CallbackContext ctx)
