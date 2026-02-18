@@ -16,7 +16,7 @@ public class SpeedBoostLoot : Loot
     {
         if (other.CompareTag("Player"))
         {
-            //player.GetComponent<LoadoutState>().IncreaseMaxSpeed(speedIncreasePercent);
+            player.IncreaseMovespeed(speedIncreasePercent);
             base.telemetryManager.LootPickedUp();
             Destroy(gameObject);
         }

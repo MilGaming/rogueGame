@@ -82,6 +82,9 @@ public class TelemetryManager : MonoBehaviour
         Debug.Log("Enemies killed % " + eneKilledPerc);
         Debug.Log("Loot taken % " + lootGathPerc);
         Debug.Log("Player deaths: " + playerDeaths);
+        Debug.Log("Time spent Bowman: " + timeSpentBowMan);
+        Debug.Log("Time spent Knight: " + timeSpentKnight);
+        Debug.Log("Time spent Berserker: " + timeSpentBerserker);
 
         timePlayed = 0f;
         playerDeaths = 0;
@@ -89,6 +92,9 @@ public class TelemetryManager : MonoBehaviour
         totalLoot = 0;
         lootTaken = 0;
         enemiesKilled = 0;
+        timeSpentBowMan = 0f;
+        timeSpentBerserker = 0;
+        timeSpentKnight = 0;
 
     }
 

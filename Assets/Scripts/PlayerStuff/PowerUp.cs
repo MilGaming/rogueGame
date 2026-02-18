@@ -7,6 +7,9 @@ public class PowerUp : MonoBehaviour
     Player _player;
     Collider2D _collider;
 
+    TelemetryManager telemetryManager;
+
+
     public enum EnemyType
     {
         DamageBoost,
@@ -17,6 +20,7 @@ public class PowerUp : MonoBehaviour
     {
         _player = FindFirstObjectByType<Player>();
         _collider = GetComponent<Collider2D>();
+        telemetryManager = FindFirstObjectByType<TelemetryManager>();
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -38,6 +42,7 @@ public class PowerUp : MonoBehaviour
 
             // prevent re-triggering
             _collider.enabled = false;
+            telemetryManager.LootPickedUp();
 
             // play explosion animation
             _barrelAnimator.SetTrigger("Explode");
