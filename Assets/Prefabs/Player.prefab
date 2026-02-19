@@ -1262,6 +1262,7 @@ MonoBehaviour:
   dualLayerName: RogueLayer
   bowLayerName: RangerLayer
   forwardDotThreshold: 0.7071
+  sr: {fileID: 4082147329428181911}
 --- !u!212 &4082147329428181911
 SpriteRenderer:
   m_ObjectHideFlags: 0
