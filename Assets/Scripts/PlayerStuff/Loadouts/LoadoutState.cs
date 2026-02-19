@@ -145,6 +145,7 @@ public class LoadoutState : MonoBehaviour
             switch (a.type)
             {
                 case ActionType.AttackLight:
+                    if (loadout is DualSwords) anim.ToggleRogueWeaponSide();
                     yield return RunAction(loadout.GetLightAttackDuration(), loadout.LightAttack(getMouseDir()), ActionType.AttackLight, "Attack");
                     nextAttackTime = Time.time + loadout.GetLightAttackDuration();
                     telemetryManager.LightAttackCount(loadoutNumber);

@@ -19,11 +19,11 @@ public class DualSwords : LoadoutBase
     {
         _lightDamage = 5f;
         //_lightAttackDuration = 0.25f;
-        _lightAttackDuration = 0.1f;
+        _lightAttackDuration = 0.15f;
         _lightDashCD = 0.5f;
         _defenseDuration = 0.4f;
         _heavyDamage = 10f;
-        _heavyAttackDuration = 0.75f;
+        _heavyAttackDuration = 0.6f;
 
         _sword = GameObject.FindGameObjectWithTag("Sword");
         if (_sword != null)

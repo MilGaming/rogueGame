@@ -44,6 +44,8 @@ public class PlayerAnimDriver : MonoBehaviour
     // getter if like we need to read current weapon, maybe like usefull for ui and shit
     public WeaponId CurrentWeapon { get; private set; } = WeaponId.Shield;
 
+    [SerializeField] private SpriteRenderer sr;
+    bool swapWeaponSide;
     void Awake()
     {
         knightLayer = animator.GetLayerIndex(shieldLayerName);
@@ -51,17 +53,28 @@ public class PlayerAnimDriver : MonoBehaviour
         rangerLayer = animator.GetLayerIndex(bowLayerName);
     }
 
-    //
+    
     public void UpdateLocomotion(Vector2 lookDir, Vector2 velocityWorld)
     {
         // stops tweaking issue when mouse is exactly at player position, thanks chat
         if (lookDir.sqrMagnitude < 0.0001f) lookDir = Vector2.down;
         else lookDir.Normalize();
 
-        animator.SetFloat(LookXHash, lookDir.x);
+        bool isRogue = (CurrentWeapon == WeaponId.Dual);
+        Vector2 realLookDir = lookDir;
+        float lookXForAnimator = lookDir.x;
+        if (isRogue && swapWeaponSide) lookXForAnimator = -lookXForAnimator;
+
+
+        animator.SetFloat(LookXHash, lookXForAnimator);
         animator.SetFloat(LookYHash, lookDir.y);
 
-        int moveType = ComputeMoveType(lookDir, velocityWorld);
+
+        if (isRogue) sr.flipX = swapWeaponSide;
+        else sr.flipX = false;
+
+
+        int moveType = ComputeMoveType(realLookDir, velocityWorld);
         animator.SetInteger(MoveTypeHash, moveType);
     }
 
@@ -128,5 +141,9 @@ public class PlayerAnimDriver : MonoBehaviour
 
     public Animator GetAnimator() => animator;
 
+    public void ToggleRogueWeaponSide()
+    {
+        swapWeaponSide = !swapWeaponSide;
+    }
 
 }
