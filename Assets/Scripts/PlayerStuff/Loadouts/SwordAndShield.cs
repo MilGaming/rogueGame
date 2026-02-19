@@ -15,6 +15,8 @@ public class SwordAndShield : LoadoutBase
 
     public SwordAndShield(Player player) : base(player)
     {
+        _heavyAttackDuration = 0.65f;
+
         _sword = GameObject.FindGameObjectWithTag("Sword");
         if (_sword != null)
         {
