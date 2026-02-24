@@ -79,8 +79,8 @@ public class MapElite : MonoBehaviour
 
             // behavior + fitness
             candidate.geoBehavior = new Vector2(
-                BehaviorFunctions.GetMapOpennessBehavior(candidate, 10),
-                BehaviorFunctions.GetWindingnessBehavior(candidate, 10)
+                BehaviorFunctions.GetComponentCountBehavior(candidate, 10),
+                0
             );
 
             candidate.geoFitness = FitnessFunctions.GetGeometryFitness(
@@ -168,7 +168,7 @@ public class MapElite : MonoBehaviour
             //behavior + fitness
             candidate.enemyBehavior = BehaviorFunctions.EnemyClusterBehavior(
                 candidate.mapData,
-                BehaviorFunctions.EnemyCombatMix(candidate.mapData.enemies, Vector2.zero)
+                BehaviorFunctions.EnemyRoleDiversity(candidate.mapData.enemies, Vector2.zero)
             );
 
             candidate.enemFitness = FitnessFunctions.GetEnemyFitness(candidate);
@@ -329,8 +329,8 @@ public class MapElite : MonoBehaviour
 
             // Behaviors
             candidate.geoBehavior = new Vector2(
-                BehaviorFunctions.GetMapOpennessBehavior(candidate, 10),
-                BehaviorFunctions.GetWindingnessBehavior(candidate, 10)
+                BehaviorFunctions.GetComponentCountBehavior(candidate, 10),
+                0
             );
 
             candidate.furnBehavior = BehaviorFunctions.FurnishingBehaviorPickupDanger(
@@ -340,7 +340,7 @@ public class MapElite : MonoBehaviour
 
             candidate.enemyBehavior = BehaviorFunctions.EnemyClusterBehavior(
                 candidate.mapData,
-                BehaviorFunctions.EnemyCombatMix(candidate.mapData.enemies, Vector2.zero)
+                BehaviorFunctions.EnemyRoleDiversity(candidate.mapData.enemies, Vector2.zero)
             );
 
             var key = candidate.CombinedBehavior;

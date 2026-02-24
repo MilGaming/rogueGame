@@ -1,85 +1,17 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
 
 public class BehaviorFunctions : MonoBehaviour 
 {
-
-    static float LocalOpennessAt(int opennessRadius, int posX, int posY, int[,] mapArray)
+    
+    // compute amount of components
+    public static int GetComponentCountBehavior(MapCandidate candidate, int resolution)
     {
-        int floorCount = 0;
-        int total = 0;
-
-        // For each tile in R radius square, how many are floor?
-        for (int dx = -opennessRadius; dx <= opennessRadius; dx++)
-        {
-            for (int dy = -opennessRadius; dy <= opennessRadius; dy++)
-            {
-                int x = posX + dx;
-                int y = posY + dy;
-                if (x < 0 || y < 0 || x >= mapArray.GetLength(0) || y >= mapArray.GetLength(1))
-                    continue;
-
-                total++;
-                if (mapArray[x, y] != 2 && mapArray[x, y] != 0)
-                    floorCount++;
-            }
-        }
-        // Return percentage of floor tiles in radius
-        if (total == 0) return 0f;
-        return (float)floorCount / total;   // 0..1
+        int componentCount = candidate.mapData.components.Count;
+        float normalized = Mathf.Clamp01((componentCount - 1f) / 5f);
+        return GetBehaviorRange(resolution, normalized);
     }
-
-
-    static float ComputeOpenness(int[,] mapArray)
-    {
-        float opennessScoreSum = 0f;
-        float amountOfTiles = 0f;
-
-        for (int x = 0; x < mapArray.GetLength(0); x++)
-        {
-            for (int y = 0; y < mapArray.GetLength(1); y++)
-            {
-                if (mapArray[x, y] != 0 && mapArray[x, y] != 2)
-                {
-                    opennessScoreSum += LocalOpennessAt(5, x, y, mapArray);
-                    amountOfTiles += 1f;
-                }
-            }
-        }
-        return opennessScoreSum / amountOfTiles;  // 0..1
-    }
-
-    public static int GetMapOpennessBehavior(MapCandidate candidate, int resolution)
-    {
-        float openness = ComputeOpenness(candidate.mapData.mapArray);
-
-        return GetBehaviorRange(resolution, openness);
-    }
-
-    //
-    static float ComputeWindingness(float shortestPathLength, Vector2Int start, Vector2Int end)
-    {
-
-        float straight =
-            Mathf.Abs(start.x - end.x) +
-            Mathf.Abs(start.y - end.y);
-
-        float ratio = shortestPathLength / straight;
-
-        float maxRatio = 2.5f;
-        float windingness = (ratio - 1f) / (maxRatio - 1f);
-
-        return Mathf.Clamp01(windingness);
-    }
-
-    public static int GetWindingnessBehavior(MapCandidate candidate, int resolution)
-    {
-        int pathCount = candidate.mapData.shortestPath?.Count ?? 0;
-        float wind = ComputeWindingness(pathCount, candidate.mapData.playerStartPos.Value, candidate.mapData.endPos.Value);
-        return GetBehaviorRange(resolution, wind);
-    }
-
 
     static int GetBehaviorRange(int resolution, double value)
     {
@@ -123,6 +55,44 @@ public class BehaviorFunctions : MonoBehaviour
         
     }
 
+    public static Vector2 EnemyRoleDiversity(List<(Vector2Int placement, int type)> enemies, Vector2 behavior)
+    {
+        bool has0 = false;
+        bool has1 = false;
+        bool has2 = false;
+        bool has3 = false;
+        bool has4 = false;
+
+        foreach (var enemy in enemies)
+        {
+            if (enemy.type == 0) has0 = true;
+            else if (enemy.type == 1) has1 = true;
+            else if (enemy.type == 2) has2 = true;
+            else if (enemy.type == 3) has3 = true;
+            else if (enemy.type == 4) has4 = true;
+        }
+
+        float typeCount = 0;
+        if (has0) typeCount++;
+        if (has1) typeCount++;
+        if (has2) typeCount++;
+        if (has3) typeCount++;
+        if (has4) typeCount++;
+
+        if (typeCount <= 1)
+        {
+            return new Vector2(0, behavior.y);
+        }
+        else if (typeCount <= 3)
+        {
+            return new Vector2(1, behavior.y);
+        }
+        else
+        {
+            return new Vector2(2, behavior.y);
+        }
+    }
+
 
     public static Vector2 EnemyClusterBehavior(MapInfo map, Vector2 behavior)
     {
@@ -136,9 +106,37 @@ public class BehaviorFunctions : MonoBehaviour
                 {
                     for (int b = room.YMin; b <=room.YMax; b++)
                     {
-                        if (map.mapArray[a, b] == 6 || map.mapArray[a, b] == 7)
+                        /*if (map.mapArray[a, b] == 6 || map.mapArray[a, b] == 7)
                         {
                             clusterSize ++;
+                        }*/
+                        /*
+                         ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣤⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠔⠊⠉⠀⠀⠀⠀⠀⠈⠉⠒⢤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡤⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠤⠔⠒⠒⠛⠘⠓⠒⠲⠦⢄⠀⠀⠀⠀
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢞⡴⠍⠊⠉⠑⠂⡇⠀⡠⠀⡀⠀⠀⠀⠀⠀⠀⠙⢆⠀⠀
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⢀⠤⠒⠉⢈⠈⠁⠶⣤⠖⢠⠇⠀⠀⠀⠇⣆⠀⠀⠀⠀⠀⠀⠈⢧⠀
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⢫⠂⠀⠀⠀⠀⢼⠀⠀⠀⠀⣄⠘⢦⡀⠀⠀⠀⠀⠀⠈⡆
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠠⢖⣭⡾⠒⠈⠁⠀⠀⠀⠀⠀⠀⠀⠈⢣⠀⠀⠀⠈⠓⢄⠱⠀⠀⠀⠀⠀⠀⡇
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⡔⠀⠀⡴⠛⠲⡴⢳⠀⠀⠀⠀⢀⡀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠈⣃⠤⠀⠀⠀⠀⢀⡇
+                        ⠀⠀⠀⠀⠀⠀⠀⠀⡰⠁⠀⠀⢑⡤⠀⠁⠸⡀⠀⢀⡔⠊⠓⠒⠤⢄⣀⣀⣀⡴⠃⠀⠀⠀⠀⠐⠫⢄⣒⠤⠔⠀⢸⠁
+                        ⠀⠀⠀⠀⠀⠀⠀⡸⠁⠀⠀⠰⡁⠀⡀⠀⠀⢧⠀⠸⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⣠⠃⠀
+                        ⠀⠀⠀⠀⠀⠀⣰⠁⠀⠀⠀⠀⠈⠉⢱⡀⠀⠈⢣⣀⠈⠒⠢⠤⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡴⠃⠀⠀
+                        ⠀⠀⠀⠀⠀⢰⠃⠀⠀⠀⠀⠀⠀⠀⠀⢣⠀⠀⠀⠈⠉⠑⠒⠊⠁⠙⠦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠴⡎⠀⠀⠀⠀
+                        ⠀⠀⠀⠀⢀⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠀⠈⠉⠛⠒⠒⠒⠒⠚⠉⠀⠀⡇⠀⠀⠀⠀
+                        ⠀⠀⠀⠀⣸⠀⠀⠀⠀⠀⠀⢠⠀⠀⠀⠀⠘⠢⣄⠀⠀⠀⠀⠀⠀⠸⠅⠙⠔⠒⠒⡄⠀⠀⠀⠀⠀⠀⠀⡁⠀⠀⠀⠀
+                        ⠀⠀⢀⣀⡇⠀⠀⠀⠀⠀⠀⠈⢦⠀⠀⠀⠀⠀⠀⠉⠙⠒⠒⠒⠤⠖⠁⠀⠀⠠⡤⠃⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀
+                        ⠀⡎⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠳⢤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⠔⢆⣀⠜⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀
+                        ⠀⡳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠒⠒⠒⢺⠋⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠁⠀⠀⠀⠀
+                        ⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡘⠀⠀⠀⠀⠀
+                         */
+
+
+                        int value = map.mapArray[a, b];
+                        if (value >= 40 && value <= 44)
+                        {
+                            clusterSize++;
                         }
                     }
                 }
@@ -163,6 +161,7 @@ public class BehaviorFunctions : MonoBehaviour
             return new Vector2(behavior.x, 2);
         }
     }
+
 
     public static Vector2 FurnishingBehaviorPickupDanger(MapInfo map, Vector2 behavior)
     {
