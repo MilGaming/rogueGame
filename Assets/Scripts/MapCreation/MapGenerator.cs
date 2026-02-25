@@ -1,12 +1,12 @@
-using UnityEngine;
-using System.Collections;
+
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Animations;
+using UnityEditor.Tilemaps;
+using UnityEngine;
+using UnityEngine.UIElements;
+using static UnityEditor.PlayerSettings;
 
-using UnityEngine.InputSystem;
-using UnityEngine.Rendering;
-using Unity.Mathematics;
-using Unity.Collections;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -17,48 +17,19 @@ public class MapGenerator : MonoBehaviour
 
     [Header("Enemies")]
     [SerializeField] int amountOfEnemyTypes;
-    [SerializeField] int startingBudget;
+    [SerializeField] int enemiesBudget;
 
 
     [Header("Furnishing")]
-    [SerializeField] int maxAmountFurnishing;
+    [SerializeField] int furnishingBudget;
     [SerializeField] int amountOfFurnishingTypes;
 
 
-    [Header("Controls")]
-    public InputActionReference placeObjects;
-    public InputActionReference remakeMap;
-    public InputActionReference mutateMap;
-    public InputActionReference mutatePlacements;
-    public InputActionReference mutateContent;
-
     public MapInfo currentMap;
 
-    MapInstantiator mapInstantiator;
-
-    void Awake()
-    {
-        mapInstantiator = FindFirstObjectByType<MapInstantiator>();
-    }
     void Start()
     {
-        //Debug.Log("Helo?");
-        mapInstantiator = FindFirstObjectByType<MapInstantiator>();
         MakeMap();
-    }
-
-    void OnEnable()
-    {
-        //placeObjects.action.Enable();
-        remakeMap.action.Enable();
-        mutateMap.action.Enable();
-        mutatePlacements.action.Enable();
-        mutateContent.action.Enable();
-        placeObjects.action.performed += ctx => { currentMap = PlaceObjects(currentMap); };
-        remakeMap.action.performed += ctx => { currentMap = MakeMap(); };
-        mutateMap.action.performed += ctx => { currentMap = MutateMap(currentMap); };
-        mutatePlacements.action.performed += ctx => { currentMap = MutatePlacements(currentMap); };
-        mutateContent.action.performed += ctx => { currentMap = MutateContent(currentMap); };
     }
 
     private MapInfo PlaceObjects(MapInfo map)
@@ -76,11 +47,7 @@ public class MapGenerator : MonoBehaviour
             enemies = new List<(Vector2Int, int)>(),
             furnishing = new List<(Vector2Int, int)>(),
             floorTiles = new List<Vector2Int>(),
-            enemyBudgetMin = 0,
-            enemyBudgetMax = 0,
             enemyBudget = 0,
-            furnishingBudgetMin = 0,
-            furnishingBudgetMax = 0,
             furnishingBudget = 0,
             distFromPlayerToEnd = 0,
         };
@@ -157,6 +124,7 @@ public class MapGenerator : MonoBehaviour
                     }
                 }
             }
+            component.UpdateTileList();
         }
         map.corridorTileCount = 0;
         // paint and make corridors
@@ -169,6 +137,9 @@ public class MapGenerator : MonoBehaviour
             if (map.shortestPath == null)
             {
                 Debug.Log("No path found between player start and end!");
+            }
+            else {
+                Debug.Log("Totally got path");
             }
         }
 
@@ -201,12 +172,8 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }*/
-        map.enemyBudgetMin = (int)(map.floorTiles.Count * 0.01f);
-        map.enemyBudgetMax = (int)(map.floorTiles.Count * 0.035f);
-        map.enemyBudget = UnityEngine.Random.Range(map.enemyBudgetMin, map.enemyBudgetMax+1);
-        map.furnishingBudgetMin = (int)(map.floorTiles.Count * 0.02f);
-        map.furnishingBudgetMax = (int)(map.floorTiles.Count * 0.07f);
-        map.furnishingBudget = UnityEngine.Random.Range(map.furnishingBudgetMin, map.furnishingBudgetMax+1);
+        map.enemyBudget = enemiesBudget;
+        map.furnishingBudget = furnishingBudget;
     
         return map;
     }
@@ -257,6 +224,7 @@ public class MapGenerator : MonoBehaviour
             var newComponent = new FloorComponent();
             newComponent.rooms.Add(room);
             map.components.Add(newComponent);
+            newComponent.UpdateTileList();
         }
         else
         {
@@ -270,48 +238,128 @@ public class MapGenerator : MonoBehaviour
                 main.rooms.AddRange(other.rooms);
                 map.components.Remove(other);
             }
+            main.UpdateTileList();
         }
 
         return map;
     }
 
+    public static int GetComponentEnemyBudget(
+    int lastComponentNumber,   // highest orderIndex on main path
+    float size,                // component area in tiles
+    int orderIndex,            // 0 = optional room
+    int baseLineBudget,
+    int lootCount,
+    float averageSize = 200f
+)
+    {
+        // ---- SIZE NORMALIZATION ----
+        // Larger rooms => more enemies
+        float denom = Mathf.Max(1f, averageSize);      // avoid divide-by-zero if averageSize is misconfigured
+        float size01 = Mathf.Max(0.25f, size / denom); // floor prevents tiny rooms from collapsing to ~0 enemies
+        float sizeFactor = Mathf.Sqrt(size01);         // diminishing returns: bigger rooms add enemies, but slower
+
+        float difficultyFactor;
+
+        if (orderIndex <= 0)
+        {
+            // ---- OPTIONAL ROOM SCALING ----
+            // Reward-driven: more loot => more guarding enemies.
+            // Convert reward to a soft factor: 0 loot -> ~0.65, lots of loot -> up to ~1.6
+            // Clamp keeps it sane even if the room is stuffed.
+            float reward01 = Mathf.Clamp01(lootCount / 6f);   // "6 reward points" ~ full scale
+            difficultyFactor = Mathf.Lerp(0.65f, 1.6f, reward01);
+        }
+        else
+        {
+            // ---- MAIN PATH SCALING ----
+            // Later rooms => more enemies
+            float order01;
+            if (lastComponentNumber <= 1) order01 = 0f; // Only one rooms case
+            // This is a quadratic ramp: early rooms stay relatively easy, late rooms ramp up harder.
+            //   order01 = 0  -> 0.6x
+            //   order01 = 1  -> 1.5x  (0.6 + 0.9)
+            else order01 = Mathf.Clamp01((orderIndex - 1f) / (lastComponentNumber - 1f));
+            difficultyFactor = 0.6f + 0.9f * (order01 * order01);
+        }
+
+        float scaled = baseLineBudget * sizeFactor * difficultyFactor;
+        return Mathf.Max(1, Mathf.RoundToInt(scaled));
+    }
 
     public MapInfo placeEnemies(MapInfo map)
     {
-        // collect candidate floor tiles
-        List<Vector2Int> candidates = new List<Vector2Int>(map.floorTiles);
-        // shuffle candidates
-        for (int i = 0; i < candidates.Count; i++)
-        {
-            int swapIndex = UnityEngine.Random.Range(i, candidates.Count);
-            (candidates[i], candidates[swapIndex]) = (candidates[swapIndex], candidates[i]);
-        }
-
         var occupied = new HashSet<Vector2Int>(
         map.enemies.Select(e => e.placement)
         .Concat(map.furnishing.Select(f => f.placement)));
-
-        // place enemies not too close to each other
-        foreach (var pos in candidates)
+        for (int x = 0; x < map.mapArray.GetLength(0); x++)
         {
-            if (map.enemies.Count >= map.enemyBudget)
-                break;
-            // check distance to enemies and furnishing
-            bool tooClose = false;
-            foreach (var p in occupied)
+            for (int y = 0; y < map.mapArray.GetLength(1); y++)
             {
-                if (p == pos)
+                int t = map.mapArray[x, y];
+
+                if (t == 2     // road / shortest path
+                || t == 99    // exit
+                || t == 100)  // player
                 {
-                    tooClose = true;
-                    break;
+                    occupied.Add(new Vector2Int(x, y));
                 }
             }
-            if (tooClose)
-                continue;
+        }
 
-            // place enemy
-            int enemyType = UnityEngine.Random.Range(0, amountOfEnemyTypes);
-            map.enemies.Add((pos, 6+enemyType));
+
+        foreach (var c in map.components)
+        {
+            if (c.tiles.Count <= 0)
+            {
+                Debug.Log("empty component");
+                continue;
+            }
+            var componentBudget = GetComponentEnemyBudget(map.mainRoomsAmount, c.tiles.Count, c.orderIndex, map.enemyBudget, c.lootCount);
+            componentBudget -= c.enemiesCount;
+            if (componentBudget <= 0) continue;
+            for (int i = 0; i < componentBudget; i++)
+            {
+                bool placed = false;
+                int tries = 0;
+
+                while (tries < 1000)
+                {
+                    Vector2Int tile = c.tiles[Random.Range(0, c.tiles.Count-1)];
+                    if (occupied.Add(tile))
+                    {
+                        int enemyType;
+
+                        // If component too small, forbid guardian (type 0)
+                        if (c.tiles.Count <= 200)
+                        {
+                            enemyType = Random.Range(1, amountOfEnemyTypes); // excludes 0
+                        }
+                        else
+                        {
+                            // normal roll
+                            enemyType = Random.Range(0, amountOfEnemyTypes);
+                            // make guardian twice as rare
+                            if (enemyType == 0 && Random.value < 0.5f)
+                            {
+                                enemyType = Random.Range(1, amountOfEnemyTypes); // reroll to non-0
+                            }
+                        }
+                        map.enemies.Add((tile, 40 + enemyType));
+                        // guardian costs twice
+                        c.enemiesCount += (enemyType == 0) ? 2 : 1;
+                        placed = true;
+                        break;
+                    }
+                    tries++;
+                }
+
+                if (!placed)
+                {
+                    Debug.Log("a component was filled to the brim");
+                    break; // component is completely filled; stop trying to add more
+                }
+            }
         }
 
         foreach (var (p, t) in map.enemies)
@@ -325,7 +373,9 @@ public class MapGenerator : MonoBehaviour
     public MapInfo placeFurnishing(MapInfo map)
     {
         // collect candidate floor tiles
-        List<Vector2Int> candidates = new List<Vector2Int>(map.floorTiles);
+        List<Vector2Int> candidates = map.floorTiles
+        .Where(p => map.mapArray[p.x, p.y] != 2)
+        .ToList();
 
         // shuffle candidates
         for (int i = 0; i < candidates.Count; i++)
@@ -337,6 +387,8 @@ public class MapGenerator : MonoBehaviour
         var occupied = new HashSet<Vector2Int>(
         map.enemies.Select(e => e.placement)
         .Concat(map.furnishing.Select(f => f.placement)));
+
+        bool lastPlacedFriendly = false;
 
         foreach (var pos in candidates)
         {
@@ -354,9 +406,22 @@ public class MapGenerator : MonoBehaviour
             }
             if (tooClose)
                 continue;
-
-            // place funrnishing
-            int furnishType = UnityEngine.Random.Range(0, amountOfFurnishingTypes);
+            var c = GetComponentForTile(map, pos);
+            // place funrnishing. Insure 50/50 for powerups and obstacles.
+            int furnishType;
+            if (lastPlacedFriendly)
+            {
+                furnishType = UnityEngine.Random.Range(0, amountOfFurnishingTypes-2);
+                lastPlacedFriendly = false;
+                c.spikeCount++;
+            }
+            else
+            {
+                furnishType = UnityEngine.Random.Range(2, amountOfFurnishingTypes);
+                lastPlacedFriendly = true;
+                c.lootCount++;
+            }
+            occupied.Add(pos);
             map.furnishing.Add((pos, 11+furnishType));
         }
 
@@ -466,50 +531,15 @@ public class MapGenerator : MonoBehaviour
 
     public MapInfo mutateEnemies(MapInfo map)
     {
-        // no enemies to mutate
-        if (map.enemies == null || map.enemies.Count == 0)
-            return map;
-
-        int mutateEnemyBudget = UnityEngine.Random.Range(0, 2);
-        if (mutateEnemyBudget == 1)
+        int amountToMutate = Mathf.CeilToInt(map.enemies.Count * 0.2f);
+        for (int i = 0; i < amountToMutate; i++)
         {
-            int mutateType = UnityEngine.Random.Range(0, 2);
-            int mutateAmount = UnityEngine.Random.Range(5, 16);
-            if (mutateType == 0)
-            {
-                map.enemyBudget = math.max(map.enemyBudgetMin, (int)(map.enemyBudget*(1-(mutateAmount*0.01f))));
-                while(map.enemies.Count > map.enemyBudget)
-                {
-                    int idx = UnityEngine.Random.Range(0, map.enemies.Count);
-                    var (pos, type) = map.enemies[idx];
-                    map.enemies.RemoveAt(idx);
-                    map.mapArray[pos.x, pos.y] = 1;
-                }
-            }
-            else
-            {
-                map.enemyBudget = math.min(map.enemyBudgetMax, (int)(map.enemyBudget*(1+(mutateAmount*0.01f))));
-            }
-    
-        }
-        // pick one to remove
-        /*int idx = UnityEngine.Random.Range(0, map.enemies.Count);
-        var (pos, type) = map.enemies[idx];
-        map.enemies.RemoveAt(idx);
-        map.enemyBudget++;*/
-
-        // clear from map
-        int removeEnemies = UnityEngine.Random.Range(0,2);
-        if (removeEnemies == 1)
-        {
-            int amountToRemove = (int)UnityEngine.Random.Range(1, map.enemyBudget*0.15f);
-            for (int i = 0; i<amountToRemove; i++)
-            {
-                int idx = UnityEngine.Random.Range(0, map.enemies.Count);
-                var (pos, type) = map.enemies[idx];
-                map.enemies.RemoveAt(idx);
-                map.mapArray[pos.x, pos.y] = 1;
-            }
+            int index = UnityEngine.Random.Range(0, map.enemies.Count);
+            var removed = map.enemies[index];
+            map.mapArray[removed.Item1.x, removed.Item1.y] = 1;
+            map.enemies.RemoveAt(index);
+            var c = GetComponentForTile(map, removed.placement);
+            c.enemiesCount--;
         }
         // add replacement
         map = placeEnemies(map);
@@ -519,44 +549,41 @@ public class MapGenerator : MonoBehaviour
 
     public MapInfo mutateFurnishing(MapInfo map)
     {
-        // no furnishing to mutate
-        if (map.furnishing == null || map.furnishing.Count == 0)
-            return map;
-
-
-        int mutateFurnishingBudget = UnityEngine.Random.Range(0, 2);
-        if (mutateFurnishingBudget == 1)
+        // Move 20 %
+        int amountToMutate = Mathf.CeilToInt(map.furnishing.Count * 0.2f);
+        bool lastRemovedFriendly = false;
+        for (int i = 0; i < amountToMutate; i++)
         {
-            int mutateType = UnityEngine.Random.Range(0, 2);
-            int mutateAmount = UnityEngine.Random.Range(5, 16);
-            if (mutateType == 0)
+            int index = UnityEngine.Random.Range(0, map.furnishing.Count);
+            if (lastRemovedFriendly)
             {
-                map.furnishingBudget = math.max(map.furnishingBudgetMin, (int)(map.furnishingBudget*(1-(mutateAmount*0.01f))));
-                while(map.furnishing.Count > map.furnishingBudget)
+                while (map.furnishing[index].Item2 == 13 || map.furnishing[index].Item2 == 14)
                 {
-                    int idx = UnityEngine.Random.Range(0, map.furnishing.Count);
-                    var (pos, type) = map.furnishing[idx];
-                    map.furnishing.RemoveAt(idx);
-                    map.mapArray[pos.x, pos.y] = 1;
+                    index = UnityEngine.Random.Range(0, map.furnishing.Count);
                 }
+
             }
             else
             {
-                map.furnishingBudget = (int)(map.furnishingBudget*(1+(mutateAmount*0.01f)));
+                while (map.furnishing[index].Item2 == 11 || map.furnishing[index].Item2 == 12)
+                {
+                    index = UnityEngine.Random.Range(0, map.furnishing.Count);
+                }
             }
-    
-        }
-        int removeFurnishing = UnityEngine.Random.Range(0,2);
-        if (removeFurnishing == 1)
-        {
-            int amountToRemove = (int)math.min(UnityEngine.Random.Range(1, map.furnishingBudget*0.15f), map.furnishing.Count);
-            for (int i = 0; i<amountToRemove; i++)
+            var removed = map.furnishing[index];
+            map.mapArray[removed.Item1.x, removed.Item1.y] = 1;
+            map.furnishing.RemoveAt(index);
+            var c = GetComponentForTile(map, removed.placement);
+            if (lastRemovedFriendly)
             {
-                int idx = UnityEngine.Random.Range(0, map.furnishing.Count);
-                var (pos, type) = map.furnishing[idx];
-                map.furnishing.RemoveAt(idx);
-                map.mapArray[pos.x, pos.y] = 1;
+                c.spikeCount--;
             }
+            else
+            {
+                c.lootCount--;
+            }
+            lastRemovedFriendly = !lastRemovedFriendly;
+
         }
 
         // add replacement
@@ -879,10 +906,8 @@ public class MapGenerator : MonoBehaviour
 
             foreach (var neighbor in GetNeighbors(current))
             {
-                if(neighbor.x >= map.mapSize || neighbor.x < 0 || neighbor.y >= map.mapSize || neighbor.y < 0)
-                {
+                if (neighbor.x < 0 || neighbor.y < 0 || neighbor.x >= map.mapArray.GetLength(0) || neighbor.y >= map.mapArray.GetLength(1))
                     continue;
-                }
                 if (map.mapArray[neighbor.x, neighbor.y] == 3 || map.mapArray[neighbor.x, neighbor.y] == 4 || map.mapArray[neighbor.x, neighbor.y] == 5)
                     continue;
 
@@ -944,7 +969,7 @@ public class MapGenerator : MonoBehaviour
             pathReversed.Add(current);
         }
 
-        pathReversed.Reverse(); // now it�s start -> goal
+        pathReversed.Reverse(); // now its start -> goal
         var path = pathReversed;
 
         // Reset component flags
@@ -953,12 +978,14 @@ public class MapGenerator : MonoBehaviour
             comp.onMainPath = false;
             comp.entryTile = null;
             comp.exitTile = null;
+            comp.orderIndex = 0;
         }
 
         // Walk the path once and mark components
         FloorComponent currentComp = null;
         Vector2Int previousTile = default;
         bool hasPreviousTile = false;
+        int order = 0;
 
         foreach (var tile in path)
         {
@@ -975,16 +1002,26 @@ public class MapGenerator : MonoBehaviour
 
                 // entering new component
                 currentComp = tileComp;
-                if (currentComp != null && !currentComp.entryTile.HasValue)
+                if (currentComp != null)
                 {
-                    currentComp.onMainPath = true;
-                    currentComp.entryTile = tile;
+                    if (!currentComp.entryTile.HasValue)
+                    {
+                        currentComp.onMainPath = true;
+                        currentComp.entryTile = tile;
+                    }
+
+                    // assign order on first time we see this component
+                    if (currentComp.orderIndex == 0)
+                    {
+                        order++;
+                        currentComp.orderIndex = order; // player room becomes 1 automatically
+                    }
                 }
             }
-
             previousTile = tile;
             hasPreviousTile = true;
         }
+        map.mainRoomsAmount = order;
 
         // close last component
         if (currentComp != null && hasPreviousTile)
@@ -993,11 +1030,71 @@ public class MapGenerator : MonoBehaviour
             currentComp.exitTile = previousTile;
         }
 
+        // ------------------------------------------------------------
+        // Give OPTIONAL components an entry/exit too (orderIndex == 0)
+        // entry: closest tile in component to ANY main-path tile
+        // exit : farthest tile in component from that entry
+        // ------------------------------------------------------------
+        foreach (var comp in map.components)
+        {
+            if (comp.entryTile.HasValue && comp.exitTile.HasValue)
+                continue; // main-path component already has both
+
+            if (comp.tiles == null || comp.tiles.Count == 0)
+                continue;
+
+            // Find entry as the tile in this component closest to the main path
+            int bestDist = int.MaxValue;
+            Vector2Int bestEntry = comp.tiles[0];
+
+            for (int i = 0; i < comp.tiles.Count; i++)
+            {
+                Vector2Int t = comp.tiles[i];
+
+                // distance to nearest path tile
+                int nearest = int.MaxValue;
+                for (int j = 0; j < path.Count; j++)
+                {
+                    Vector2Int p = path[j];
+                    int d = Mathf.Abs(t.x - p.x) + Mathf.Abs(t.y - p.y);
+                    if (d < nearest) nearest = d;
+                    if (nearest == 0) break; // can't do better than 0
+                }
+
+                if (nearest < bestDist)
+                {
+                    bestDist = nearest;
+                    bestEntry = t;
+                    if (bestDist == 0) break; // touching main path
+                }
+            }
+
+            comp.entryTile = bestEntry;
+
+            // Find exit as farthest tile from entry (inside the same component)
+            int farDist = -1;
+            Vector2Int bestExit = bestEntry;
+
+            for (int i = 0; i < comp.tiles.Count; i++)
+            {
+                Vector2Int t = comp.tiles[i];
+                int d = Mathf.Abs(t.x - bestEntry.x) + Mathf.Abs(t.y - bestEntry.y);
+                if (d > farDist)
+                {
+                    farDist = d;
+                    bestExit = t;
+                }
+            }
+
+            comp.exitTile = bestExit;
+            // NOTE: comp.onMainPath stays false, and comp.orderIndex stays 0.
+        }
+
         return path;
     }
 
 
-    FloorComponent GetComponentForTile(MapInfo map, Vector2Int tile)
+    public static FloorComponent GetComponentForTile(MapInfo map, Vector2Int tile)
     {
         foreach (var comp in map.components)
         {
@@ -1102,6 +1199,7 @@ public class MapInfo
 {
     public int[,] mapArray;
     public int mapSize;
+    public int mainRoomsAmount;
     public List<FloorComponent> components;
     public List<Vector2Int> floorTiles;
     public int corridorTileCount;
@@ -1111,24 +1209,17 @@ public class MapInfo
     public Vector2Int? endPos;
     public float distFromPlayerToEnd;
     public List<Vector2Int> shortestPath;
-    public int enemyBudgetMin;
-
-    public int enemyBudgetMax;
+ 
     public int enemyBudget;
-    public int furnishingBudgetMin;
-    public int furnishingBudgetMax;
     public int furnishingBudget;
 
     // Copy constructor
     public MapInfo(MapInfo other)
     {
         mapSize = other.mapSize;
+        mainRoomsAmount = other.mainRoomsAmount;
         distFromPlayerToEnd = other.distFromPlayerToEnd;
-        enemyBudgetMin = other.enemyBudgetMin;
-        enemyBudgetMax = other.enemyBudgetMax;
         enemyBudget = other.enemyBudget;
-        furnishingBudgetMin = other.furnishingBudgetMin;
-        furnishingBudgetMax = other.furnishingBudgetMax;
         furnishingBudget = other.furnishingBudget;
         playerStartPos = other.playerStartPos;
         endPos = other.endPos;
@@ -1157,7 +1248,12 @@ public class MapInfo
                 components.Add(new FloorComponent
                 {
                     rooms = c.rooms != null ? new List<Room>(c.rooms) : new List<Room>(),
+                    tiles = c.tiles != null ? new List<Vector2Int>(c.tiles) : new List<Vector2Int>(),
                     onMainPath = c.onMainPath,
+                    lootCount = c.lootCount,
+                    spikeCount = c.spikeCount,
+                    orderIndex = c.orderIndex,
+                    enemiesCount = c.enemiesCount,
                     entryTile = c.entryTile,
                     exitTile = c.exitTile
                 });
@@ -1183,7 +1279,15 @@ public class FloorComponent
 {
     // Rooms
     public List<Room> rooms = new List<Room>();
+    public List<Vector2Int> tiles = new List<Vector2Int>();
+    // main-path ordering (0 = optional)
+    public int orderIndex = 0;
 
+    // reward content
+    public int lootCount = 0;
+    public int spikeCount = 0;
+
+    public int enemiesCount = 0;
     public bool onMainPath = false;
     public Vector2Int? entryTile;
     public Vector2Int? exitTile;
@@ -1199,11 +1303,13 @@ public class FloorComponent
 
     static bool RoomsTouchOrOverlap(Room a, Room b)
     {
-        // inclusive bounds
+        const int clearance = 1; // 1 tile buffer so you can fit walls / spacing
+
         bool xOverlap =
-            a.XMin <= b.XMax && a.XMax >= b.XMin;
+            (a.XMin - clearance) <= b.XMax && (a.XMax + clearance) >= b.XMin;
+
         bool yOverlap =
-            a.YMin <= b.YMax && a.YMax >= b.YMin;
+            (a.YMin - clearance) <= b.YMax && (a.YMax + clearance) >= b.YMin;
 
         return xOverlap && yOverlap;
     }
@@ -1218,6 +1324,27 @@ public class FloorComponent
         }
         return false;
     }
+
+    public void UpdateTileList()
+    {
+        var tileSet = new HashSet<Vector2Int>();
+        tiles.Clear();
+
+        foreach (var r in rooms)
+        {
+            for (int x = r.XMin; x <= r.XMax; x++)
+                for (int y = r.YMin; y <= r.YMax; y++)
+                {
+                    var p = new Vector2Int(x, y);
+
+                    // HashSet enforces uniqueness
+                    if (tileSet.Add(p))
+                        tiles.Add(p);
+                }
+        }
+    }
+
+
 }
 
 public struct Room
