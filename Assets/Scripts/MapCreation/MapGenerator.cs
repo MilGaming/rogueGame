@@ -516,7 +516,16 @@ public class MapGenerator : MonoBehaviour
         // validate existing enemies and furnishing
         //map = ValidateEnemiesAgainstMap(map);
         //map = ValidateFurnishingAgainstMap(map);
-        
+        foreach(var component in map.components)
+        {
+            if(component.orderIndex == 0 || !component.onMainPath)
+            {
+                foreach(var tile in component.tiles)
+                {
+                    map.mapArray[tile.x, tile.y] = 55;
+                }
+            }
+        }
         return map;
     }
 
