@@ -53,6 +53,8 @@ public class MapInstantiator : MonoBehaviour
 
     [SerializeField] GameObject levelManager;
 
+    [SerializeField] private MapSurroundingsGenerator surroundingsGenerator;
+
     public static Player CurrentPlayer { get; private set; }
     public static System.Action<Player> OnPlayerSpawned;
 
@@ -530,6 +532,11 @@ public class MapInstantiator : MonoBehaviour
                 }
             }
         }
+        if (surroundingsGenerator != null)
+        {
+            surroundingsGenerator.GenerateSurroundings(map);
+        }
+
         if (telemetryManager == null)
         {
             telemetryManager = GetComponent<TelemetryManager>();
@@ -573,6 +580,11 @@ public class MapInstantiator : MonoBehaviour
         tilemapBase.ClearAllTiles();
         tilemapRoad.ClearAllTiles();
         tilemapDecour.ClearAllTiles();
+
+        if (surroundingsGenerator != null)
+        {
+            surroundingsGenerator.ClearSurroundings();
+        }
 
     }
 
