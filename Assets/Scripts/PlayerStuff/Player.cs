@@ -18,6 +18,7 @@ public class Player : MonoBehaviour
     Shield _shield;
     UI _ui;
     float _score = 0;
+    float _damageBlocked = 0;
 
     TelemetryManager telemetryManager;
     private Coroutine _tempBuffCo;
@@ -51,7 +52,7 @@ public class Player : MonoBehaviour
 
     public float HeavyDashCooldownDecrease = 1f;
 
-    private float _parryStunDuration = 10f;
+    private float _parryStunDuration = 1f;
 
 
     bool _isRespawning;
@@ -134,6 +135,7 @@ public class Player : MonoBehaviour
             if (enemy != null && enemy._data.enemyType != EnemyType.Ranged)
             {
                 enemy.ApplyStun(_parryStunDuration);
+                _loadoutState.RefundDefCD();
                 telemetryManager.defenseToEnemy[telemetryManager.loadOutNumber, (int)enemy._data.enemyType] += 1;
             }
             return;
@@ -141,6 +143,7 @@ public class Player : MonoBehaviour
 
         if (_shield.isBlocking && shieldIntercepts)
         {
+            AddDamageBlocked(damage);
             telemetryManager.defenseToEnemy[telemetryManager.loadOutNumber, (int)attacker.GetComponentInParent<Enemy>()._data.enemyType] += 1;
             return;
         }
@@ -344,6 +347,26 @@ public class Player : MonoBehaviour
         return _isInvinsible;
     }
 
+    public void AddDamageBlocked(float dmg)
+    {
+        _damageBlocked += dmg;
+    }
+
+    public float GetDamageBlocked()
+    {
+        return _damageBlocked; 
+    }
+
+    public void ResetDamageBlocked()
+    {
+        _damageBlocked = 0f;
+    }
+
+    public Vector2 GetMouseDir()
+    {
+        return _loadoutState.getMouseDir();
+    }
+
     public void ResetStats()
     {
         _damageMultiplier = 1.0f;
@@ -356,11 +379,6 @@ public class Player : MonoBehaviour
         _ui.updateHealth(_health);
         _ui.updateBuffs(_attackSpeedMultiplier, _moveSpeedMultiplier, _damageMultiplier);
     }
-    void CurrentLoadout()
-    {
-
-    }
-
     public float DamageMultiplier => _damageMultiplier;
     public float AttackSpeedMultiplier => _attackSpeedMultiplier;
     public float GetMoveSpeed()
