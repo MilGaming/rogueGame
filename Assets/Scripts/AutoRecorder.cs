@@ -22,7 +22,7 @@ public class AutoRecorder : MonoBehaviour
     private string currentRecordingPath;
 
     // Folder only
-    private const string RecordingFolder = "C:/Users/baldu/rogueGame/MyRecordings";
+    private const string RecordingFolder = "/MyRecordings";
 
     void Awake()
     {
