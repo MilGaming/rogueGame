@@ -17,13 +17,13 @@ public class DualSwords : LoadoutBase
 
     public DualSwords(Player player) : base(player)
     {
-        _lightDamage = 5f;
+        _lightDamage = 7.5f;
         //_lightAttackDuration = 0.25f;
         _lightAttackDuration = 0.15f;
         _lightDashCD = 0.5f;
         _defenseDuration = 0.25f;
         _defCD = 3f;
-        _heavyDamage = 10f;
+        _heavyDamage = 12.5f;
         _heavyAttackDuration = 0.6f;
 
         _sword = GameObject.FindGameObjectWithTag("Sword");
