@@ -168,11 +168,14 @@ public class LevelManager : MonoBehaviour
             _player.MovementSpeedMultiplier,
             _player.DamageMultiplier
         );
+        _player.IncreaseScore(300);
+        telemetryManager.SetTotalScore(_player.GetScore());
         telemetryManager.UploadData();
         machines = FindObjectsByType<StateMachine>(FindObjectsSortMode.None);
         float[] behaviors = new float[5] { playMap.geoBehavior[0], playMap.furnBehavior[0], playMap.furnBehavior[1], playMap.enemyBehavior[0], playMap.enemyBehavior[1] };
         telemetryManager.SetBehavior(behaviors);
         _player.ResetStats();
+        
         LoadNextMap();
 
         _hasSpawnPos = false;
