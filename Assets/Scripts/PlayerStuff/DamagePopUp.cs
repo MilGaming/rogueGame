@@ -9,7 +9,7 @@ public class DamagePopup : MonoBehaviour
 
     float moveSpeed = 3f;
     float fadeSpeed = 3f;
-    float lifetime = 1.5f;
+    float lifetime = 1f;
 
     Color textColor;
 
@@ -63,10 +63,8 @@ public class DamagePopup : MonoBehaviour
 
         // fade out
         lifetime -= Time.deltaTime;
-        float alpha = lifetime;
-
-        textColor.a = alpha;
-        textMesh.color = textColor;
+        //textColor.a = alpha;
+        //textMesh.color = textColor;
 
         if (lifetime <= 0)
         {

@@ -304,6 +304,7 @@ public class MapInstantiator : MonoBehaviour
                             )
                         );
                         telemetryManager.IncreaseTotalMapScore(30);
+                        telemetryManager.IncreaseMapPowerupCounter();
                         break;
                     case 25:
                         tilemapBase.SetTile(cell, tilesGroundDecour[0]);

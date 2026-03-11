@@ -18,11 +18,16 @@ public class TelemetryManager : MonoBehaviour
 
     float lootTaken;
 
-    float enemiesKilled;
+    float powerUpsTaken;
 
+    float totalMapPowerUps;
+
+    float enemiesKilled;
     float totalEnemies;
 
     float totalLoot;
+
+    float averageEnemiesAliveOnLootPickup;
 
     float timeSpentKnight;
     float timeSpentBerserker;
@@ -97,7 +102,6 @@ public class TelemetryManager : MonoBehaviour
 
     float TotalMapScore;
     float CurrentMapScore;
-
     float totalScore;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -135,6 +139,17 @@ public class TelemetryManager : MonoBehaviour
     public void SetTotalLoot(float loot)
     {
         totalLoot = loot;
+    }
+
+    public void IncreaseMapPowerupCounter()
+    {
+        totalMapPowerUps +=1;
+    }
+
+    public void PowerUpTaken()
+    {
+        powerUpsTaken+=1;
+        averageEnemiesAliveOnLootPickup += (totalEnemies-enemiesKilled);
     }
 
     public void EnemyKilled()
@@ -196,6 +211,9 @@ public class TelemetryManager : MonoBehaviour
             MapScore = CurrentMapScore,
             MapScorePercentage = CurrentMapScore/TotalMapScore * 100f,
             enemiesKilledPct = eneKilledPerc,
+            HealthBarrelsTaken = totalLoot - powerUpsTaken,
+            PowerUpsTaken = powerUpsTaken,
+            AvgEnemiesAliveOnPowerUpTaken = powerUpsTaken > 0? averageEnemiesAliveOnLootPickup/powerUpsTaken : 0,
             lootTakenPct = lootGathPerc,
             deaths = playerDeaths,
             bowmanTime = timeSpentBowMan,
@@ -668,6 +686,9 @@ public struct TelemetryData
     public float MapScore;
     public float MapScorePercentage;
     public float enemiesKilledPct;
+    public float HealthBarrelsTaken;
+    public float PowerUpsTaken;
+    public float AvgEnemiesAliveOnPowerUpTaken;
     public float lootTakenPct;
     public float deaths;
 
