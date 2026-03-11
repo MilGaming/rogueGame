@@ -73,6 +73,7 @@ public class MapInstantiator : MonoBehaviour
     public void makeMap(int[,] map)
     {
         ClearPreviousMap();
+        telemetryManager.IncreaseTotalMapScore(300);
         int tileIndex;
         //int mapStyle = Random.Range(0,3);
         int mapStyle = 1;
@@ -302,6 +303,7 @@ public class MapInstantiator : MonoBehaviour
                                 Quaternion.identity
                             )
                         );
+                        telemetryManager.IncreaseTotalMapScore(30);
                         break;
                     case 25:
                         tilemapBase.SetTile(cell, tilesGroundDecour[0]);
@@ -380,6 +382,7 @@ public class MapInstantiator : MonoBehaviour
                         spawnedEnemies.Add(
                             Instantiate(enemyPrefabs[0], tilemapBase.GetCellCenterWorld(cell), Quaternion.identity)
                         );
+                        telemetryManager.IncreaseTotalMapScore(20);
                         break;
                     case 41:
                         switch (mapStyle)
@@ -401,6 +404,7 @@ public class MapInstantiator : MonoBehaviour
                                 Quaternion.identity
                             )
                         );
+                        telemetryManager.IncreaseTotalMapScore(30);
                         break;
                     case 42:
                         switch (mapStyle)
@@ -422,6 +426,7 @@ public class MapInstantiator : MonoBehaviour
                                 Quaternion.identity
                             )
                         );
+                        telemetryManager.IncreaseTotalMapScore(30);
                         break;
                     case 43:
                         switch (mapStyle)
@@ -443,6 +448,7 @@ public class MapInstantiator : MonoBehaviour
                                 Quaternion.identity
                             )
                         );
+                        telemetryManager.IncreaseTotalMapScore(30);
                         break;
                     case 44:
                         switch (mapStyle)
@@ -464,6 +470,7 @@ public class MapInstantiator : MonoBehaviour
                                 Quaternion.identity
                             )
                         );
+                        telemetryManager.IncreaseTotalMapScore(50);
                         break;
                     case 55:
                         int type2 = Random.Range(0,5);

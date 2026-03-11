@@ -170,7 +170,14 @@ public class Player : MonoBehaviour
     public void IncreaseScore(float scoreIncrease)
     {
         _score += scoreIncrease;
+        popup.CreatePopUp(scoreIncrease, transform.position, 5);
+        telemetryManager.IncreaseCurrentMapScore(scoreIncrease);
         _ui.updateScore(_score);
+    }
+
+    public float GetScore()
+    {
+        return _score;
     }
 
     public void Heal(float health)
