@@ -30,7 +30,6 @@ public class PopUpCreator : MonoBehaviour
         }
         var pos = new Vector3(position.x+offset,position.y+0.5f, position.z);
         GameObject popup = Instantiate(damagePopupPrefab, pos, Quaternion.identity);
-
         popup.GetComponent<DamagePopup>().Setup(damage, type);
     }
 
