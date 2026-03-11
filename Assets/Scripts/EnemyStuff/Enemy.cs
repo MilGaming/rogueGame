@@ -138,6 +138,21 @@ public class Enemy : MonoBehaviour
         if (animDriver != null) animDriver.TriggerDead();
 
         telemetryManager.EnemyKilled();
+        float scoreAmount;
+        switch (_data.enemyType)
+        {
+            case EnemyType.Melee:
+                scoreAmount = 20;
+                break;
+            case EnemyType.Guardian:
+                scoreAmount = 50;
+                break;
+            default:
+                scoreAmount = 30;
+                break;
+        }
+
+        _player.IncreaseScore(scoreAmount);
         Destroy(gameObject, 2f);
     }
 

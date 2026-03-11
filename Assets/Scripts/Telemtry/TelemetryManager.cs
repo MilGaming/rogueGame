@@ -94,6 +94,12 @@ public class TelemetryManager : MonoBehaviour
 
     int distanceCounterWall = 1;
     int distanceCounterEnemy = 1;
+
+    float TotalMapScore;
+    float CurrentMapScore;
+
+    float totalScore;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -146,6 +152,20 @@ public class TelemetryManager : MonoBehaviour
         timerStarted = true;
     }
 
+    public void IncreaseTotalMapScore(float score)
+    {
+        TotalMapScore += score;
+    }
+
+    public void IncreaseCurrentMapScore(float score)
+    {
+        CurrentMapScore += score;
+    }
+
+    public void SetTotalScore(float score)
+    {
+        totalScore = score;
+    }
     public void GenerateRandomLevelID(int length)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -172,6 +192,9 @@ public class TelemetryManager : MonoBehaviour
             levelPlayID = levelPlayID,
             playerId = SystemInfo.deviceUniqueIdentifier,
             timePlayed = timePlayed,
+            TotalScore = totalScore,
+            MapScore = CurrentMapScore,
+            MapScorePercentage = CurrentMapScore/TotalMapScore * 100f,
             enemiesKilledPct = eneKilledPerc,
             lootTakenPct = lootGathPerc,
             deaths = playerDeaths,
@@ -442,6 +465,8 @@ public class TelemetryManager : MonoBehaviour
     public void ResetStats(bool levelCleared)
     {
         timePlayed = 0f;
+        CurrentMapScore = 0f;
+        TotalMapScore = 0f;
         if (levelCleared)
         {
             playerDeaths = 0;
@@ -639,6 +664,9 @@ public struct TelemetryData
     public string playerId;
 
     public float timePlayed;
+    public float TotalScore;
+    public float MapScore;
+    public float MapScorePercentage;
     public float enemiesKilledPct;
     public float lootTakenPct;
     public float deaths;
