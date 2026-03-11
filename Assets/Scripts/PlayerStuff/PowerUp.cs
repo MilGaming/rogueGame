@@ -21,7 +21,7 @@ public class PowerUp : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if(_boostType == 2 && _player.MovementSpeedMultiplier <= 2.0f)
+            if(_boostType == 2 && _player.MovementSpeedMultiplier >= 2.0f)
             {
                 _boostType = Random.Range(0,2);
             }
@@ -42,6 +42,7 @@ public class PowerUp : MonoBehaviour
             // prevent re-triggering
             _collider.enabled = false;
             telemetryManager.LootPickedUp();
+            telemetryManager.PowerUpTaken();
 
             // play explosion animation
             _barrelAnimator.SetTrigger("Explode");
