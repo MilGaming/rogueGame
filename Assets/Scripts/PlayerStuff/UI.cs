@@ -11,7 +11,7 @@ public class UI : MonoBehaviour
 
     public void updateScore(float score)
     {
-        scoreText.text = score.ToString("0");
+        scoreText.text = "Score: " + score.ToString("0");
     }
     public void updateHealth(float score)
     {

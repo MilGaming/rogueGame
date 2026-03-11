@@ -37,6 +37,7 @@ public class PowerUp : MonoBehaviour
                     _player.IncreaseMovespeed(0.1f);
                     break;
             }
+            _player.IncreaseScore(30);
 
             // prevent re-triggering
             _collider.enabled = false;

@@ -39,9 +39,20 @@ public class DamagePopup : MonoBehaviour
             case 4:
                 textMesh.color = Color.white;
                 break;
+            //score increase
+            case 5:
+                textMesh.color = Color.yellow;
+                break;
 
         }
-        textMesh.SetText(damage.ToString());
+        if (type == 5)
+        {
+            textMesh.SetText("+" + damage.ToString());
+        }
+        else
+        {
+            textMesh.SetText(damage.ToString());
+        }
         textColor = textMesh.color;
     }
 
