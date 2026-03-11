@@ -47,8 +47,8 @@ public class LevelManager : MonoBehaviour
 
     void Awake()
     {
-        if (autoRecorder == null)
-            autoRecorder = FindFirstObjectByType<AutoRecorder>();
+        /*if (autoRecorder == null)
+            autoRecorder = FindFirstObjectByType<AutoRecorder>();*/
         if (mapInstantiator == null)
             mapInstantiator = FindFirstObjectByType<MapInstantiator>();
 
