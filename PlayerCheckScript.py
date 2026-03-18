@@ -3,9 +3,9 @@ import pandas as pd
 # -----------------------------
 # CONFIG
 # -----------------------------
-file_path = "Telemetry_Raw.csv"  # dataset path
+file_path = "TelemetryExplore.csv"  # dataset path
 player_id = "06ff48572547bf12bd40561cc5d6f926c19fcaf4"      # player to analyze
-metric = "bowHeavyAtk"         # telemetry parameter
+metric = "POTakePct"         # telemetry parameter
 
 level_features = [
     "GeometryBehavior",
