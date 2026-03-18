@@ -20,7 +20,6 @@ level_features = [
 exclude_cols = [
     "timestamp",
     "levelPlayID",
-    "playerId",
     "TotalScore",
     "deaths",
     "timePlayed"
