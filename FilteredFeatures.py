@@ -174,6 +174,8 @@ def process_csv():
         df["berserkHeavyDash"]
     )
 
+
+
     feature_df["avg_distance_to_enemies"] = df["AverageDistanceToEnemies"]
 
     feature_df["defense_per_time"] = [
@@ -198,6 +200,50 @@ def process_csv():
 
     feature_df["heavy_dashes_per_time"] = [
         safe_div(x, t) for x, t in zip(total_heavy_dashes, df["timePlayed"])
+    ]
+
+    feature_df["RangedAttackShare"] = [
+        safe_div(x, t) for x, t in zip(df["bowLightAtk"], total_light_attacks)
+    ]
+
+    feature_df["RangedDashShare"] = [
+        safe_div(x, t) for x, t in zip(df["bowLightDash"], total_light_dashes)
+    ]
+
+    feature_df["RogueDashShare"] = [
+        safe_div(x, t) for x, t in zip(df["berserkLightDash"], total_light_dashes)
+    ]
+
+    feature_df["KnightDashShare"] = [
+        safe_div(x, t) for x, t in zip(df["knightLightDash"], total_light_dashes)
+    ]
+
+    feature_df["RangedHeavyDashShare"] = [
+        safe_div(x, t) for x, t in zip(df["bowHeavyDash"], total_heavy_dashes)
+    ]
+
+    feature_df["RogueHeavyDashShare"] = [
+        safe_div(x, t) for x, t in zip(df["berserkHeavyDash"], total_heavy_dashes)
+    ]
+
+    feature_df["KnightHeavyDashShare"] = [
+        safe_div(x, t) for x, t in zip(df["knightHeavyDash"], total_heavy_dashes)
+    ]
+
+    feature_df["RangedDefShare"] = [
+        safe_div(x, t) for x, t in zip(df["bowDefense"], total_defense)
+    ]
+
+    feature_df["RogueDefShare"] = [
+        safe_div(x, t) for x, t in zip(df["berserkDefense"], total_defense)
+    ]
+
+    feature_df["KnightDefShare"] = [
+        safe_div(x, t) for x, t in zip(df["knightDefense"], total_defense)
+    ]
+
+    feature_df["FormChanges"] = [
+        safe_div(x, t) for x, t in zip(df["FormChangeCountInCombat"], df["timePlayed"])
     ]
 
     feature_df = feature_df.replace([np.inf, -np.inf], np.nan).fillna(0.0)
