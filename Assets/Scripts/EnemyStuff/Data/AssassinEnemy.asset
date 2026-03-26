@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89aa2cb65b170a74b8983e4e8c387720, type: 3}
   m_Name: AssassinEnemy
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  chaseRange: 20
+  chaseRange: 30
   attackRange: 10
   health: 20
   attackSpeed: 5

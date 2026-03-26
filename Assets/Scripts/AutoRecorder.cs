@@ -22,7 +22,7 @@ public class AutoRecorder : MonoBehaviour
     private string currentRecordingPath;
 
     // Folder only
-    private const string RecordingFolder = "C:/Users/olive/Thesis/rogueGame/MyRecordings";
+    private const string RecordingFolder = "C:/Users/baldu/rogueGame/MyRecordings";
 
     void Awake()
     {
@@ -82,6 +82,11 @@ public class AutoRecorder : MonoBehaviour
         StartCoroutine(RestartRecordingRoutine());
     }
 
+
+    void Start()
+    {
+        RestartRecordingAndSave();
+    }
     // Run from level manager on death
     public void DiscardRecording()
     {
