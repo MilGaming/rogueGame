@@ -150,10 +150,10 @@ public class LevelManager : MonoBehaviour
 
         telemetryManager.PlayerDied();
         telemetryManager.ResetStats(false);
-        /*if (autoRecorder != null)
+        if (autoRecorder != null)
         {
-            autoRecorder.DiscardRecording();
-        }*/
+            autoRecorder.RestartRecordingAndSave();
+        }
         // Restart the same chosen 8 maps from the beginning, preserving order
         RebuildQueueFromPlayedMaps();
         _player.ResetStats();
