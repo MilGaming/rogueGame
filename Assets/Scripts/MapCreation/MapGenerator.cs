@@ -180,7 +180,7 @@ public class MapGenerator : MonoBehaviour
             UnityEngine.Random.Range(2, mapSize.y - roomSize.y - 2)
         );
 
-        Room room = new Room
+        oldRoom room = new oldRoom
         {
             placement = roomPlacement,
             size = roomSize
@@ -1243,7 +1243,7 @@ public class MapInfo
             {
                 components.Add(new FloorComponent
                 {
-                    rooms = c.rooms != null ? new List<Room>(c.rooms) : new List<Room>(),
+                    rooms = c.rooms != null ? new List<oldRoom>(c.rooms) : new List<oldRoom>(),
                     tiles = c.tiles != null ? new List<Vector2Int>(c.tiles) : new List<Vector2Int>(),
                     onMainPath = c.onMainPath,
                     lootCount = c.lootCount,
@@ -1274,7 +1274,7 @@ public class MapInfo
 public class FloorComponent
 {
     // Rooms
-    public List<Room> rooms = new List<Room>();
+    public List<oldRoom> rooms = new List<oldRoom>();
     public List<Vector2Int> tiles = new List<Vector2Int>();
     // main-path ordering (0 = optional)
     public int orderIndex = 0;
@@ -1287,7 +1287,7 @@ public class FloorComponent
     public bool onMainPath = false;
     public Vector2Int? entryTile;
     public Vector2Int? exitTile;
-    public bool isRoomInComponent(Room room)
+    public bool isRoomInComponent(oldRoom room)
     {
         foreach (var r in rooms)
         {
@@ -1297,7 +1297,7 @@ public class FloorComponent
         return false;
     }
 
-    static bool RoomsTouchOrOverlap(Room a, Room b)
+    static bool RoomsTouchOrOverlap(oldRoom a, oldRoom b)
     {
         const int clearance = 1; // 1 tile buffer so you can fit walls / spacing
 
@@ -1343,7 +1343,7 @@ public class FloorComponent
 
 }
 [Serializable]
-public struct Room
+public struct oldRoom
 {
     public Vector2Int placement;
     public Vector2Int size;
