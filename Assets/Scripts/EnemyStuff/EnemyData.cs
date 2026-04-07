@@ -19,10 +19,3 @@ public class EnemyData : ScriptableObject
     [SerializeField] public Vector2 wanderWaitRange = new(2f, 4f);
 }
 
-public enum EnemyType{
-    Melee,
-    Ranged,
-    Bomber,
-    Assassin,
-    Guardian
-}

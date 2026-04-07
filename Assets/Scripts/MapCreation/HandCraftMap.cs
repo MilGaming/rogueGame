@@ -70,12 +70,12 @@ public class HandCraftMap : MonoBehaviour
         return candidate;
     }
 
-    private MapInfo BuildRoomGeometry(MapInfo map, List<Room> rooms)
+    private MapInfo BuildRoomGeometry(MapInfo map, List<oldRoom> rooms)
     {
         if (rooms == null)
             return map;
 
-        foreach (Room room in rooms)
+        foreach (oldRoom room in rooms)
         {
             PlaceRoom(map, room);
         }
@@ -91,7 +91,7 @@ public class HandCraftMap : MonoBehaviour
         return map;
     }
 
-    private void PlaceRoom(MapInfo map, Room room)
+    private void PlaceRoom(MapInfo map, oldRoom room)
     {
         var touchingComponents = new List<FloorComponent>();
 
@@ -187,7 +187,7 @@ public class HandCraftMap : MonoBehaviour
 [Serializable]
 public class HandcraftedMapData
 {
-    public List<Room> rooms = new List<Room>();
+    public List<oldRoom> rooms = new List<oldRoom>();
     public List<SpawnEntry> enemies = new List<SpawnEntry>();
     public List<SpawnEntry> furnishing = new List<SpawnEntry>();
 }
