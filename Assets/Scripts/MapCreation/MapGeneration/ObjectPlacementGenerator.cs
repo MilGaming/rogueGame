@@ -107,7 +107,7 @@ public static class ObjectPlacementGenerator
 
         // Choose enemy type randomly, add enemy, update budget and occupied
         EnemyType randomType = MapHelpers.EnemyTypes[Random.Range(0, MapHelpers.EnemyTypes.Length)];
-        room.enemies.Add((tile, (int)randomType));
+        room.enemies.Add(new GridEntry(tile, (int)randomType));
         room.enemyBudgetUsed += MapHelpers.EnemyCosts[randomType];
         occupied.Add(tile);
         return true;
@@ -228,7 +228,7 @@ public static class ObjectPlacementGenerator
             randomType = LootType.Powerup;
         }
 
-        room.loot.Add((tile, (int)randomType));
+        room.loot.Add(new GridEntry(tile, (int)randomType));
         room.lootBudgetUsed += 1;
         
         occupied.Add(tile);
@@ -329,7 +329,7 @@ public static class ObjectPlacementGenerator
 
         // Choose loot type randomly, add loot, update budget and occupied
         ObstacleType randomType = MapHelpers.ObstacleTypes[Random.Range(0, MapHelpers.ObstacleTypes.Length)];
-        room.obstacles.Add((tile, (int)randomType));
+        room.obstacles.Add(new GridEntry(tile, (int)randomType));
         room.obstacleBudgetUsed += 1;
         occupied.Add(tile);
         return true;

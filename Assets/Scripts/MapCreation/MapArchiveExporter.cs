@@ -1,265 +1,77 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-public static class MapArchiveExporter
+[Serializable]
+public class MapListWrapper
 {
+    public List<Map> maps = new();
+}
 
-    [System.Serializable]
-    public class Vector2IntList
+public static class MapJsonSaveSystem
+{
+    public static void SaveMaps(List<Map> maps, string fileName = "maps.json")
     {
-        public List<Vector2Int> tiles;
-    }
-
-    [System.Serializable]
-    public class MapDTO
-    {
-        public int width;
-        public int height;
-
-
-        // flattened row-major list: length == width * height
-        // IMPORTANT: this exporter flattens in (y-major, x-minor) order using mapArray[x,y]
-        public List<int> flatTiles;
-
-        // Fitness
-        public float fitness;      // combined
-        public float geoFitness;   // slice
-        public float enemyFitness; // slice (maps from candidate.enemFitness)
-        public float furnFitness;  // slice
-
-        // Behavior slices
-        public List<float> geoBehavior;   // [x, y]
-        public List<float> enemyBehavior; // [x, y]
-        public List<float> furnBehavior;  // [x, y]
-
-        // Summary metrics
-
-        public List<Vector2IntList> optionalComponents;
-        public List<Vector2Int> optionalComponentTiles;
-        public int roomsCount;
-        public int enemiesCount;
-        public int furnishingCount;
-        public int enemyBudget;
-        public int furnishingBudget;
-        public int walkableTiles;
-        public int wallTiles;
-    }
-
-    [System.Serializable]
-    public class MapCollection
-    {
-        public List<MapDTO> maps;
-    }
-
-    public static void ExportArchiveToJson(
-        IEnumerable<MapCandidate> candidates,
-        string filename = "archive_maps.json")
-    {
-        var collection = new MapCollection { maps = new List<MapDTO>() };
-
-        foreach (var candidate in candidates)
+        if (maps == null)
         {
-            if (candidate == null || candidate.mapData == null)
-                continue;
-
-            var map = candidate.mapData;
-
-            int width = map.mapArray?.GetLength(0) ?? 0;
-            int height = map.mapArray?.GetLength(1) ?? 0;
-
-            // Defensive: avoid null refs in summary metrics
-            int roomsCount = map.components?.Count ?? 0;
-            int enemiesCount = map.enemies?.Count ?? 0;
-            int furnishingCount = map.furnishing?.Count ?? 0;
-            int walkableTiles = map.floorTiles?.Count ?? 0;
-
-            int wallTiles = (map.mapArray != null) ? CountWallTiles(map.mapArray) : 0;
-
-            List<List<Vector2Int>> optComp = new List<List<Vector2Int>>();
-            HashSet<Vector2Int> optCompTiles = new HashSet<Vector2Int>();
-
-            foreach (var component in candidate.mapData.components)
-            {
-                if (!component.onMainPath || component.orderIndex == 0)
-                {
-                    foreach (var tile in component.tiles)
-                    {
-                        optCompTiles.Add(tile);
-                    }
-                    optComp.Add(component.tiles);
-                }
-            }
-
-            var dto = new MapDTO
-            {
-                width = width,
-                height = height,
-                flatTiles = (map.mapArray != null) ? FlattenMapArray(map.mapArray) : new List<int>(),
-
-                // Fitness: combined + slices
-                fitness = SafeFloat(candidate.CombinedFitness),
-                geoFitness = SafeFloat(candidate.geoFitness),
-                enemyFitness = SafeFloat(candidate.enemFitness),
-                furnFitness = SafeFloat(candidate.furnFitness),
-
-                // Behaviors
-                geoBehavior = ConvertBehaviorToList(candidate.geoBehavior),
-                enemyBehavior = ConvertBehaviorToList(candidate.enemyBehavior),
-                furnBehavior = ConvertBehaviorToList(candidate.furnBehavior),
-
-                // Summary
-                optionalComponents = OptionalComponents(optComp),
-                optionalComponentTiles = OptTiles(optCompTiles),
-                roomsCount = roomsCount,
-                enemiesCount = enemiesCount,
-                furnishingCount = furnishingCount,
-                enemyBudget = map.enemyBudget,
-                furnishingBudget = map.furnishingBudget,
-                walkableTiles = walkableTiles,
-                wallTiles = wallTiles
-            };
-
-            collection.maps.Add(dto);
+            Debug.LogError("SaveMaps failed: maps list is null.");
+            return;
         }
 
-        string json = JsonUtility.ToJson(collection, false);
-        string path = Path.Combine(Application.dataPath, filename);
+        // Prepare each map before serializing
+        foreach (var map in maps)
+        {
+            if (map != null)
+                MapHelpers.PrepareMapForSave(map);
+        }
+
+        var wrapper = new MapListWrapper
+        {
+            maps = maps
+        };
+
+        string json = JsonUtility.ToJson(wrapper, true);
+        string path = Path.Combine(Application.persistentDataPath, fileName);
+
         File.WriteAllText(path, json);
 
-        Debug.Log($"Archive exported to {path} ({collection.maps.Count} maps)");
+        Debug.Log($"Saved {maps.Count} maps to: {path}");
     }
 
-    // --------------------
-    // Helper methods
-    // --------------------
-
-    private static List<Vector2IntList> OptionalComponents(List<List<Vector2Int>> components)
+    public static List<Map> LoadMaps(string fileName = "maps.json")
     {
-        var result = new List<Vector2IntList>();
-        var counter = 0;
+        string path = Path.Combine(Application.persistentDataPath, fileName);
 
-        foreach (var comp in components)
-        {
-            result.Add(new Vector2IntList { tiles = comp });
-            counter += comp.Count;
-        }
-        //Debug.Log("Amount of opt comp tiles counted from components: " + counter);
-        return result;
-    }
-
-    private static List<Vector2Int> OptTiles(HashSet<Vector2Int> tiles)
-    {
-        //Debug.Log("Amount of opt comp tiles counted from tiles: " + tiles.Count);
-        return new List<Vector2Int>(tiles);
-    }
-    private static float SafeFloat(float v)
-    {
-        if (float.IsNaN(v) || float.IsInfinity(v)) return 0f;
-        return v;
-    }
-
-    private static int CountWallTiles(int[,] mapArray)
-    {
-        // Adjust if you redefine wall IDs.
-        // Based on your instantiator: 3,4,5 are walls, plus corner variants 31,32.
-        int w = mapArray.GetLength(0);
-        int h = mapArray.GetLength(1);
-        int count = 0;
-
-        for (int x = 0; x < w; x++)
-        {
-            for (int y = 0; y < h; y++)
-            {
-                int t = mapArray[x, y];
-                if (t == 3 || t == 4 || t == 5 || t == 31 || t == 32)
-                    count++;
-            }
-        }
-
-        return count;
-    }
-
-    private static List<int> FlattenMapArray(int[,] mapArray)
-    {
-        int width = mapArray.GetLength(0);
-        int height = mapArray.GetLength(1);
-
-        // Row-major by y then x (matches dto.tiles[y][x])
-        var flat = new List<int>(width * height);
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                flat.Add(mapArray[x, y]);
-            }
-        }
-        return flat;
-    }
-
-    private static List<List<int>> ConvertMapArrayToNestedList(int[,] mapArray)
-    {
-        int width = mapArray.GetLength(0);
-        int height = mapArray.GetLength(1);
-
-        var rows = new List<List<int>>(height);
-        for (int y = 0; y < height; y++)
-        {
-            var row = new List<int>(width);
-            for (int x = 0; x < width; x++)
-            {
-                row.Add(mapArray[x, y]);
-            }
-            rows.Add(row);
-        }
-        return rows;
-    }
-
-    private static List<float> ConvertBehaviorToList(Vector2 behavior)
-    {
-        return new List<float> { behavior.x, behavior.y };
-    }
-
-    public static MapCollection LoadArchiveFromJson(string filename = "archive_maps.json")
-    {
-        string path = Path.Combine(Application.dataPath, filename);
         if (!File.Exists(path))
         {
-            Debug.LogWarning($"Archive file not found: {path}");
-            return new MapCollection { maps = new List<MapDTO>() };
+            Debug.LogWarning($"LoadMaps: file not found at {path}");
+            return new List<Map>();
         }
 
         string json = File.ReadAllText(path);
-        var collection = JsonUtility.FromJson<MapCollection>(json);
-        return collection ?? new MapCollection { maps = new List<MapDTO>() };
-    }
 
-    public static int[,] MapFromDto(MapDTO dto)
-    {
-        var arr = new int[dto.width, dto.height];
-
-        if (dto.flatTiles != null && dto.flatTiles.Count == dto.width * dto.height)
+        if (string.IsNullOrWhiteSpace(json))
         {
-            int i = 0;
-            for (int y = 0; y < dto.height; y++)
-            {
-                for (int x = 0; x < dto.width; x++)
-                {
-                    arr[x, y] = dto.flatTiles[i++];
-                }
-            }
-            return arr;
+            Debug.LogWarning("LoadMaps: file was empty.");
+            return new List<Map>();
         }
 
-        return arr;
-    }
+        MapListWrapper wrapper = JsonUtility.FromJson<MapListWrapper>(json);
 
-    public static void buildMapList(List<MapDTO> dto, string filename)
-    {
-        var collection = new MapCollection{ maps = dto };
-        string json = JsonUtility.ToJson(collection, false);
-        string path = Path.Combine(Application.dataPath, filename);
-        File.WriteAllText(path, json);
-        Debug.Log($"Archive exported to {path} ({collection.maps.Count} maps)");
+        if (wrapper == null || wrapper.maps == null)
+        {
+            Debug.LogWarning("LoadMaps: failed to deserialize maps.");
+            return new List<Map>();
+        }
+
+        foreach (var map in wrapper.maps)
+        {
+            if (map != null)
+                MapHelpers.RebuildAfterLoad(map);
+        }
+
+        Debug.Log($"Loaded {wrapper.maps.Count} maps from: {path}");
+        return wrapper.maps;
     }
 }

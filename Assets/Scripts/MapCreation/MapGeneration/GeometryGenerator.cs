@@ -200,7 +200,7 @@ public static class GeometryGenerator
 
             foreach (var tile in uniqueTiles)
             {
-                room.tiles.Add((tile, (int)TerrainType.Standard));
+                room.tiles.Add(new GridEntry(tile, (int)TerrainType.Standard));
             }
         }
     }
@@ -210,11 +210,11 @@ public static class GeometryGenerator
     {
         foreach (Room room in map.rooms)
         {
-            if (!room.onMainPath || !room.entryTile.HasValue || !room.exitTile.HasValue)
+            if (!room.onMainPath)
                 continue;
             
             HashSet<Vector2Int> pathTiles = new HashSet<Vector2Int>(
-                GetManhattanPath(room.entryTile.Value, room.exitTile.Value)
+                GetManhattanPath(room.entryTile, room.exitTile)
             );
 
             for (int i = 0; i < room.tiles.Count; i++)
@@ -223,7 +223,7 @@ public static class GeometryGenerator
 
                 if (pathTiles.Contains(tile.pos))
                 {
-                    room.tiles[i] = (tile.pos, (int)TerrainType.Path);
+                    room.tiles[i] = new GridEntry(tile.pos, (int)TerrainType.Path);
                 }
             }
         }
@@ -262,8 +262,8 @@ public static class GeometryGenerator
         {
             room.onMainPath = false;
             room.orderIndex = 0;
-            room.entryTile = null;
-            room.exitTile = null;
+            room.entryTile = new Vector2Int();
+            room.exitTile = new Vector2Int();
         }
         //Case if we only have one room
         if (map.rooms.Count == 1)
@@ -354,8 +354,8 @@ public static class GeometryGenerator
             current.onMainPath = true;
         }
 
-        current.exitTile = FindFurthestTileInRoom(current, current.entryTile.Value);
-        start.entryTile = FindFurthestTileInRoom(start, start.exitTile.Value);
+        current.exitTile = FindFurthestTileInRoom(current, current.entryTile);
+        start.entryTile = FindFurthestTileInRoom(start, start.exitTile);
         map.mainPathRooms = path;
         return map;
     }
