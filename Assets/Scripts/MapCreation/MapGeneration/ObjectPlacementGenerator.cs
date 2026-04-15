@@ -15,11 +15,11 @@ public static class ObjectPlacementGenerator
 
     public const float DefaultMutateSize = 0.2f;
 
-    public static readonly Vector2 DefaultBudgetModifierRange = new(0.25f, 6f);
+    public static readonly Vector2 DefaultBudgetModifierRange = new(0.25f, 4f);
 
-    public const int DefaultEnemyBaseBudget = 10;
-    public const int DefaultLootBaseBudget = 4;
-    public const int DefaultObstacleBaseBudget = 4;
+    public const int DefaultEnemyBaseBudget = 6;
+    public const int DefaultLootBaseBudget = 2;
+    public const int DefaultObstacleBaseBudget = 3;
     public static Map CreateEnemiesOnMap(Map map)
     {
         return CreateEnemiesOnMap(map, DefaultEnemyBaseBudget, DefaultBudgetModifierRange);

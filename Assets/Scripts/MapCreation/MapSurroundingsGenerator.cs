@@ -94,13 +94,13 @@ public class MapSurroundingsGenerator : MonoBehaviour
 
         foreach (var room in map.rooms)
         {
-            foreach (var (pos, _) in room.tiles)
+            foreach (var gridEntry in room.tiles)
             {
                 foundAny = true;
-                if (pos.x < minX) minX = pos.x;
-                if (pos.x > maxX) maxX = pos.x;
-                if (pos.y < minY) minY = pos.y;
-                if (pos.y > maxY) maxY = pos.y;
+                if (gridEntry.pos.x < minX) minX = gridEntry.pos.x;
+                if (gridEntry.pos.x > maxX) maxX = gridEntry.pos.x;
+                if (gridEntry.pos.y < minY) minY = gridEntry.pos.y;
+                if (gridEntry.pos.y > maxY) maxY = gridEntry.pos.y;
             }
         }
 

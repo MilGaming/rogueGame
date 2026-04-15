@@ -103,11 +103,46 @@ public class Map
     public Map() { }
     public Map(Map other)
     {
-        rooms = new List<Room>(other.rooms);
-        connections = new List<RoomConnection>(other.connections);
-        startRoom = other.startRoom;
-        endRoom = other.endRoom;
-        mainPathRooms = new List<Room>(other.mainPathRooms);
+        // Deep copy rooms and build a mapping from old to new
+        var roomMap = new Dictionary<Room, Room>();
+        rooms = new List<Room>();
+        foreach (var room in other.rooms)
+        {
+            var cloned = room.Clone();
+            roomMap[room] = cloned;
+            rooms.Add(cloned);
+        }
+
+        // Remap connections to cloned rooms
+        connections = new List<RoomConnection>();
+        foreach (var conn in other.connections)
+        {
+            connections.Add(new RoomConnection
+            {
+                roomA = conn.roomA != null && roomMap.TryGetValue(conn.roomA, out var a) ? a : null,
+                roomB = conn.roomB != null && roomMap.TryGetValue(conn.roomB, out var b) ? b : null,
+                tileA = conn.tileA,
+                tileB = conn.tileB,
+                length = conn.length
+            });
+        }
+
+        // Remap start/end/mainPath to cloned rooms
+        startRoom = other.startRoom != null && roomMap.TryGetValue(other.startRoom, out var s) ? s : null;
+        endRoom = other.endRoom != null && roomMap.TryGetValue(other.endRoom, out var e) ? e : null;
+
+        mainPathRooms = new List<Room>();
+        foreach (var room in other.mainPathRooms)
+            if (roomMap.TryGetValue(room, out var mapped))
+                mainPathRooms.Add(mapped);
+
+        // Copy fitness/behavior
+        geoFitness = other.geoFitness;
+        enemFitness = other.enemFitness;
+        furnFitness = other.furnFitness;
+        geoBehavior = other.geoBehavior;
+        furnBehavior = other.furnBehavior;
+        enemyBehavior = other.enemyBehavior;
     }
     public Map Clone() => new Map(this);
 
@@ -255,6 +290,32 @@ public class Room
 
         return (float)count / loot.Count;
     }
+
+    public Room Clone()
+    {
+        var clone = new Room(position);
+        clone.chunks = new List<RoomChunk>(chunks);
+        clone.tiles = new List<GridEntry>(tiles);
+        clone.tileSet = new HashSet<Vector2Int>(tileSet);
+        clone.enemies = new List<GridEntry>(enemies);
+        clone.loot = new List<GridEntry>(loot);
+        clone.obstacles = new List<GridEntry>(obstacles);
+        clone.onMainPath = onMainPath;
+        clone.orderIndex = orderIndex;
+        clone.entryTile = entryTile;
+        clone.exitTile = exitTile;
+        clone.sizeModifier = sizeModifier;
+        clone.orderModifier = orderModifier;
+        clone.enemyBudgetUsed = enemyBudgetUsed;
+        clone.enemyBudget = enemyBudget;
+        clone.lootBudget = lootBudget;
+        clone.lootBudgetUsed = lootBudgetUsed;
+        clone.obstacleBudget = obstacleBudget;
+        clone.obstacleBudgetUsed = obstacleBudgetUsed;
+        clone.roomIndex = roomIndex;
+        return clone;
+    }
+
 }
 
 // The squares the rooms are build from.

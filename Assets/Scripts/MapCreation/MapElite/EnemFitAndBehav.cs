@@ -122,7 +122,7 @@ public static class EnemFitAndBehav
         return (float)goodPairs / totalPairs;
     }
 
-    private static float[] GetEnemyComposition(List<(Vector2Int placement, int type)> enemies)
+    private static float[] GetEnemyComposition(List<GridEntry> enemies)
     {
         float[] composition = new float[MapHelpers.EnemyTypes.Length];
 
@@ -171,7 +171,7 @@ public static class EnemFitAndBehav
     }
 
     // Uses composition ranking to reduce search space to 1000 for resolution 10, 126 for resolution 20
-    public static int EnemyRoleCompositionBehavior(List<(Vector2Int placement, int type)> enemies, int resolution)
+    public static int EnemyRoleCompositionBehavior(List<GridEntry> enemies, int resolution)
     {
         if (enemies == null || enemies.Count == 0)
             return 0;

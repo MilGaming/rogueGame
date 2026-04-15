@@ -387,10 +387,7 @@ GameObject:
   m_Component:
   - component: {fileID: 859900375}
   - component: {fileID: 859900374}
-  - component: {fileID: 859900372}
   - component: {fileID: 859900377}
-  - component: {fileID: 859900378}
-  - component: {fileID: 859900379}
   m_Layer: 0
   m_Name: Grid
   m_TagString: Untagged
@@ -398,52 +395,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &859900372
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 859900371}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c3d796431252d540bdc40203fa172e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapInstantiator
-  tilemapBase: {fileID: 0}
-  tilemapRoad: {fileID: 0}
-  tilemapDecour: {fileID: 0}
-  tilemapWall: {fileID: 180224430}
-  tilesRoad: []
-  tilesGroundBase: []
-  tilesFarmBase: []
-  tilesForestBase: []
-  tilesGroundDecour: []
-  tilesFarmDecour: []
-  tilesForestDecour: []
-  tilesGroundWalls: []
-  tilesFarmWalls: []
-  tilesForestWalls: []
-  tilesGroundRoads: []
-  tilesFarmRoads: []
-  tilesForestRoads: []
-  tilesCorner: []
-  tilesWall: []
-  groundTileGrass1: {fileID: 11400000, guid: 15b6972f7cfb521429db087609cb86b0, type: 2}
-  wallTile: {fileID: 11400000, guid: c61893fb968c5f548a30f1e535036592, type: 2}
-  testTile: {fileID: 11400000, guid: 469d344fa1d980a41b98e04a2b5c0739, type: 2}
-  surface: {fileID: 1085453245}
-  playerPrefab: {fileID: 7550404422414327367, guid: e9d91d9f7bab5f04cb88ef13f2d5ff43, type: 3}
-  enemyPrefabs:
-  - {fileID: 6164719104617455019, guid: c2b004bf4911a8a4d8249268205e0aa4, type: 3}
-  - {fileID: 7378334077991207350, guid: 6ce7d400bf1a1ce4c89b300c286f1af8, type: 3}
-  furnishingPrefabs:
-  - {fileID: 5086782275875845498, guid: ec1788206efa39844adcbd6b83cb961d, type: 3}
-  - {fileID: 5086782275875845498, guid: ec1788206efa39844adcbd6b83cb961d, type: 3}
-  - {fileID: 7478037528052263297, guid: ed534ca038c4da141b60375581a40542, type: 3}
-  - {fileID: 7478037528052263297, guid: c82706e725f2f8148bb5e94378943127, type: 3}
-  levelManager: {fileID: 0}
-  telemetryManager: {fileID: 0}
 --- !u!156049354 &859900374
 Grid:
   m_ObjectHideFlags: 0
@@ -485,40 +436,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4f6ae296224daa4cb4507d17a2c05b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapElite
-  totalIterations: 200
-  initialRandomSolutions: 20
-  runElites: {fileID: 4630370472947771425, guid: 052faaac586de48259a63d0c4782560b, type: 3}
---- !u!114 &859900378
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 859900371}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3582bdd61dfe9ce49a96fce7c8fe67b8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapGenerator
-  mapSize: {x: 100, y: 100, z: 0}
-  maxRoomSize: {x: 15, y: 15, z: 0}
-  maxRoomAmount: 50
-  amountOfEnemyTypes: 5
-  enemiesBudget: 5
-  furnishingBudget: 60
-  amountOfFurnishingTypes: 4
---- !u!114 &859900379
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 859900371}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66801131bce964e4db542a7f4fe0f719, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FitnessFunctions
+  totalIterations: 1000
+  initialRandomSolutions: 100
 --- !u!1 &1085453243
 GameObject:
   m_ObjectHideFlags: 0
