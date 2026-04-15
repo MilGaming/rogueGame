@@ -19,6 +19,62 @@ public static class MapHelpers
     public static readonly ObstacleType[] ObstacleTypes =
     (ObstacleType[])Enum.GetValues(typeof(ObstacleType));
 
+    // Saving rooms multiple times would waste much space, so we change to indices for saving
+    public static void PrepareMapForSave(Map map)
+    {
+        AssignRoomIndices(map);
+
+        foreach (var connection in map.connections)
+        {
+            if (connection.roomA != null)
+                connection.roomAIndex = connection.roomA.roomIndex;
+
+            if (connection.roomB != null)
+                connection.roomBIndex = connection.roomB.roomIndex;
+        }
+
+        map.startRoomIndex = map.startRoom != null ? map.startRoom.roomIndex : -1;
+        map.endRoomIndex = map.endRoom != null ? map.endRoom.roomIndex : -1;
+
+        map.mainPathRoomIndices.Clear();
+        foreach (var room in map.mainPathRooms)
+        {
+            if (room != null)
+                map.mainPathRoomIndices.Add(room.roomIndex);
+        }
+    }
+    public static void RebuildAfterLoad(Map map)
+    {
+        foreach (var room in map.rooms)
+        {
+            room.tileSet = new HashSet<Vector2Int>();
+            foreach (var tile in room.tiles)
+                room.tileSet.Add(tile.pos);
+        }
+
+        foreach (var connection in map.connections)
+        {
+            connection.roomA = map.rooms[connection.roomAIndex];
+            connection.roomB = map.rooms[connection.roomBIndex];
+        }
+
+        map.startRoom = map.startRoomIndex >= 0 ? map.rooms[map.startRoomIndex] : null;
+        map.endRoom = map.endRoomIndex >= 0 ? map.rooms[map.endRoomIndex] : null;
+
+        map.mainPathRooms = new List<Room>();
+        foreach (int idx in map.mainPathRoomIndices)
+        {
+            map.mainPathRooms.Add(map.rooms[idx]);
+        }
+    }
+
+    public static void AssignRoomIndices(Map map)
+    {
+        for (int i = 0; i < map.rooms.Count; i++)
+        {
+            map.rooms[i].roomIndex = i;
+        }
+    }
 }
 
 
@@ -27,19 +83,23 @@ public class Map
 {
     public List<Room> rooms = new ();
     public List<RoomConnection> connections = new();
-    public Room startRoom;
-    public Room endRoom;
+    [NonSerialized] public Room startRoom;
+    [NonSerialized] public Room endRoom;
+    [NonSerialized] public List<Room> mainPathRooms = new();
 
-    public List<Room> mainPathRooms = new();
+    // Indices for reduced json space
+    public int startRoomIndex = -1;
+    public int endRoomIndex = -1;
+    public List<int> mainPathRoomIndices = new();
+
+    // For map elites
     public float geoFitness = 0f;
     public float enemFitness = 0f;
     public float furnFitness = 0f;
-
     public float CombinedFitness => geoFitness + enemFitness + furnFitness;
-    // Behavior slices
-    public Vector2 geoBehavior = new Vector2Int();
-    public Vector2 furnBehavior = new Vector2Int();
-    public Vector2 enemyBehavior = new Vector2Int();
+    public Vector2Int geoBehavior = new Vector2Int();
+    public Vector2Int furnBehavior = new Vector2Int();
+    public Vector2Int enemyBehavior = new Vector2Int();
     public Map() { }
     public Map(Map other)
     {
@@ -127,9 +187,9 @@ public class Map
         return total;
     }
 
-    public List<(Vector2Int pos, int type)> GetAllEnemies()
+    public List<GridEntry> GetAllEnemies()
     {
-        var allEnemies = new List<(Vector2Int pos, int type)>();
+        var allEnemies = new List<GridEntry>();
 
         if (rooms == null)
             return allEnemies;
@@ -149,13 +209,16 @@ public class Map
 [Serializable]
 public class Room
 {
+    // index for cheaper saves
+    public int roomIndex = -1;
+
     public List<RoomChunk> chunks = new();
-    public List<(Vector2Int pos, int type)> tiles = new();
     // for faster lookup
-    public HashSet<Vector2Int> tileSet = new();
-    public List<(Vector2Int pos, int type)> enemies = new();
-    public List<(Vector2Int pos, int type)> loot = new();
-    public List<(Vector2Int pos, int type)> obstacles = new();
+    [NonSerialized] public HashSet<Vector2Int> tileSet = new();
+    public List<GridEntry> tiles = new();
+    public List<GridEntry> enemies = new();
+    public List<GridEntry> loot = new();
+    public List<GridEntry> obstacles = new();
     public Vector2Int position;
     public bool onMainPath = false;
     public int orderIndex = 0;
@@ -168,8 +231,8 @@ public class Room
     public float obstacleBudget = 0f;
     public float obstacleBudgetUsed = 0f;
 
-    public Vector2Int? entryTile = null;
-    public Vector2Int? exitTile = null;
+    public Vector2Int entryTile = new Vector2Int();
+    public Vector2Int exitTile = new Vector2Int();
 
     public Room(Vector2Int pos)
     {
@@ -220,15 +283,34 @@ public class RoomChunk
     }
 }
 
+[Serializable]
 public class RoomConnection
 {
-    public Room roomA;
-    public Room roomB;
+    [NonSerialized] public Room roomA;
+    [NonSerialized] public Room roomB;
+
+    public int roomAIndex;
+    public int roomBIndex;
 
     public Vector2Int tileA;
     public Vector2Int tileB;
 
     public float length;
+}
+
+[Serializable]
+public class GridEntry
+{
+    public Vector2Int pos;
+    public int type;
+
+    public GridEntry() { }
+
+    public GridEntry(Vector2Int pos, int type)
+    {
+        this.pos = pos;
+        this.type = type;
+    }
 }
 
 public enum EnemyType
