@@ -90,9 +90,9 @@ public class TelemetryManager : MonoBehaviour
     float averageDistanceToWall;
     float averageDistanceToMainPath;
     
-    float optionalComponentsEntered;
+    float optionalRoomsEntered;
 
-    float amountOptionalComponentsOnMap = 0;
+    float amountOptionalRoomsOnMap = 0;
 
     int formChangeAmount;
     int formChangeAmountInCombat;
@@ -300,7 +300,7 @@ public class TelemetryManager : MonoBehaviour
             DamageMultiplier = DamageMultiplier,
             FormChangeCount = formChangeAmount,
             FormChangeCountInCombat = formChangeAmountInCombat,
-            OptionalRoomPercentage = amountOptionalComponentsOnMap != 0 ? optionalComponentsEntered / amountOptionalComponentsOnMap * 100f : 0,
+            OptionalRoomPercentage = amountOptionalRoomsOnMap != 0 ? optionalRoomsEntered / amountOptionalRoomsOnMap * 100f : 0,
             AverageDistanceToMainPath = averageDistanceToMainPath / distanceCounterRoad,
             AverageDistanceToWall = averageDistanceToWall / distanceCounterWall,
             AverageDistanceToEnemies = averageDistanceToEnemies / distanceCounterEnemy,
@@ -459,14 +459,14 @@ public class TelemetryManager : MonoBehaviour
         formChangeAmountInCombat +=1;
     }
 
-    public void OptionalComponentEntered()
+    public void OptionalRoomEntered()
     {
-        optionalComponentsEntered+=1;
+        optionalRoomsEntered += 1;
     }
 
-    public void SetTotalAmountOfOptionalComponents(int amount)
+    public void SetTotalAmountOfOptionalRooms(int amount)
     {
-        amountOptionalComponentsOnMap = amount;
+        amountOptionalRoomsOnMap = amount;
     }
 
     public void DistanceToPath(float distance)
@@ -579,8 +579,8 @@ public class TelemetryManager : MonoBehaviour
         DamageMultiplier = 0;
         formChangeAmount = 0;
         formChangeAmountInCombat = 0;
-        amountOptionalComponentsOnMap = 0;
-        optionalComponentsEntered = 0;
+        amountOptionalRoomsOnMap = 0;
+        optionalRoomsEntered = 0;
         distanceCounterRoad = 1;
         averageDistanceToMainPath = 0;
         averageDistanceToWall = 0;

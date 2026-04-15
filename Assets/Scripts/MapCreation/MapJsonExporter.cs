@@ -6,10 +6,14 @@ using UnityEngine;
 [Serializable]
 public class MapListWrapper
 {
-    public List<Map> maps = new();
+    public List<Map> wrappedMaps = new();
+
+    public MapListWrapper(List<Map> maps) {
+        this.wrappedMaps = maps;
+    }
 }
 
-public static class MapJsonSaveSystem
+public static class MapJsonExporter
 {
     public static void SaveMaps(List<Map> maps, string fileName = "maps.json")
     {
@@ -26,13 +30,10 @@ public static class MapJsonSaveSystem
                 MapHelpers.PrepareMapForSave(map);
         }
 
-        var wrapper = new MapListWrapper
-        {
-            maps = maps
-        };
+        var wrapper = new MapListWrapper(maps);
 
         string json = JsonUtility.ToJson(wrapper, true);
-        string path = Path.Combine(Application.persistentDataPath, fileName);
+        string path = Path.Combine(Application.dataPath, fileName);
 
         File.WriteAllText(path, json);
 
@@ -41,7 +42,7 @@ public static class MapJsonSaveSystem
 
     public static List<Map> LoadMaps(string fileName = "maps.json")
     {
-        string path = Path.Combine(Application.persistentDataPath, fileName);
+        string path = Path.Combine(Application.dataPath, fileName);
 
         if (!File.Exists(path))
         {
@@ -59,19 +60,19 @@ public static class MapJsonSaveSystem
 
         MapListWrapper wrapper = JsonUtility.FromJson<MapListWrapper>(json);
 
-        if (wrapper == null || wrapper.maps == null)
+        if (wrapper == null || wrapper.wrappedMaps == null)
         {
             Debug.LogWarning("LoadMaps: failed to deserialize maps.");
             return new List<Map>();
         }
 
-        foreach (var map in wrapper.maps)
+        foreach (var map in wrapper.wrappedMaps)
         {
             if (map != null)
                 MapHelpers.RebuildAfterLoad(map);
         }
 
-        Debug.Log($"Loaded {wrapper.maps.Count} maps from: {path}");
-        return wrapper.maps;
+        Debug.Log($"Loaded {wrapper.wrappedMaps.Count} maps from: {path}");
+        return wrapper.wrappedMaps;
     }
 }

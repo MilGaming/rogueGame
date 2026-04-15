@@ -22,13 +22,13 @@ public class MapElite : MonoBehaviour
     void Start()
     {
         RunMapElitesGeometry();
-        //MapArchiveExporter.ExportArchiveToJson(geoArchive.Values, "geoArchive_maps.json");
+        MapJsonExporter.SaveMaps(geoArchive.Values.ToList(), "geoArchive_maps.json");
 
         RunMapElitesFurnishing();
-        //MapArchiveExporter.ExportArchiveToJson(furnArchive.Values, "furnArchive_maps.json");
+        MapJsonExporter.SaveMaps(furnArchive.Values.ToList(), "furnArchive_maps.json");
 
         RunMapElitesEnemies();
-        //MapArchiveExporter.ExportArchiveToJson(enemArchive.Values, "enemArchive_maps.json");
+        MapJsonExporter.SaveMaps(enemArchive.Values.ToList(), "enemArchive_maps.json");
     }
 
 
@@ -64,7 +64,7 @@ public class MapElite : MonoBehaviour
 
             // behavior + fitness
             var (fitness, behavior) = GeoFitAndBehav.GetGeoFitnessAndBehavior(candidate);
-            candidate.geoBehavior = new Vector2(behavior, 0);
+            candidate.geoBehavior = new Vector2Int(behavior, 0);
             candidate.geoFitness = fitness;
 
             // Store candidate + track delta on overwrite
@@ -144,7 +144,7 @@ public class MapElite : MonoBehaviour
 
             //behavior + fitness
             var (fitness, behavior) = EnemFitAndBehav.GetEnemyFitnessAndBehavior(candidate);
-            candidate.enemyBehavior = new Vector2(behavior.enemyType, behavior.difficulty);
+            candidate.enemyBehavior = new Vector2Int(behavior.enemyType, behavior.difficulty);
             candidate.enemFitness = fitness;
 
             // Store candidate + track delta on overwrite
@@ -222,7 +222,7 @@ public class MapElite : MonoBehaviour
 
             // behavior + fitness 
             var (fitness, behavior) = FurnFitAndBehav.GetFurnFitnessAndBehavior(candidate);
-            candidate.furnBehavior = new Vector2(behavior.lootDensity, behavior.obstacleDensity);
+            candidate.furnBehavior = new Vector2Int(behavior.lootDensity, behavior.obstacleDensity);
             candidate.furnFitness = fitness;
 
             // Store candidate + track delta on overwrite
@@ -301,37 +301,15 @@ public class MapElite : MonoBehaviour
 
         return child;
     }
-    /*
-    MapCandidate SelectRandomGeometry()
+
+    Map SelectRandom<TKey>(Dictionary<TKey, Map> archive)
     {
-        //Return random solution in the archive
-        return geoArchive.Values.ToList()[Random.Range(0, geoArchive.Count)];
+        var list = archive.Values.ToList();
+        return list[Random.Range(0, list.Count)];
     }
-
-    MapCandidate SelectRandomFurnishing()
-    {
-        //Return random solution in the archive
-        return furnArchive.Values.ToList()[Random.Range(0, furnArchive.Count)];
-    }
-
-    MapCandidate SelectRandomEnemies()
-    {
-        //Return random solution in the archive
-        return enemArchive.Values.ToList()[Random.Range(0, enemArchive.Count)];
-    }*/
-
-Map SelectRandom<TKey>(Dictionary<TKey, Map> archive)
-{
-    var list = archive.Values.ToList();
-    return list[Random.Range(0, list.Count)];
-}
 
     Map MutateGeometry(Map parent)
     {
-        /*var child = new MapCandidate(parent.mapData.Clone());
-        child.mapData = mapGenerator.mutateGeometry(child.mapData);
-        return child;*/
-
         var child = new Map(parent.Clone());
         GeometryGenerator.MutateMapGeometry(child);
         GeometryGenerator.BuildRoomTopology(child);
@@ -341,12 +319,6 @@ Map SelectRandom<TKey>(Dictionary<TKey, Map> archive)
     Map MutateEnemies(Map parent)
     {
         var child = new Map(parent.Clone());
-
-        /*child.geoBehavior = new Vector2(parent.geoBehavior.x, parent.geoBehavior.y);
-        child.geoFitness = parent.geoFitness;
-        child.furnBehavior = new Vector2(parent.furnBehavior.x, parent.furnBehavior.y);
-        child.furnFitness = parent.furnFitness;
-        child.mapData = mapGenerator.mutateEnemies(child.mapData);*/
 
         ObjectPlacementGenerator.MutateLoot(child);
         ObjectPlacementGenerator.MutateObstacles(child);
@@ -362,9 +334,6 @@ Map SelectRandom<TKey>(Dictionary<TKey, Map> archive)
         var child = new Map(parent.Clone());
         ObjectPlacementGenerator.MutateLoot(child);
         ObjectPlacementGenerator.MutateObstacles(child);
-
-        /*child.geoBehavior = new Vector2(parent.geoBehavior.x, parent.geoBehavior.y);
-        child.geoFitness = parent.geoFitness;*/
 
         child.geoBehavior = parent.geoBehavior;
         child.geoFitness = parent.geoFitness;

@@ -94,11 +94,11 @@ public class MapInstantiator : MonoBehaviour
         // Paint floor tiles
         foreach (var room in map.rooms)
         {
-            foreach (var (pos, type) in room.tiles)
+            foreach (GridEntry gridEntry in room.tiles)
             {
-                var cell = new Vector3Int(pos.x, pos.y, 0);
+                var cell = new Vector3Int(gridEntry.pos.x, gridEntry.pos.y, 0);
 
-                switch ((TerrainType)type)
+                switch ((TerrainType)gridEntry.type)
                 {
                     case TerrainType.Standard:
                         tilemapBase.SetTile(cell, GetBaseTiles()[Random.Range(0, 5)]);
@@ -120,27 +120,27 @@ public class MapInstantiator : MonoBehaviour
             }
 
             //place obstacles
-            foreach (var (pos, type) in room.obstacles)
+            foreach (GridEntry gridEntry in room.obstacles)
             {
-                var cell = new Vector3Int(pos.x, pos.y, 0);
+                var cell = new Vector3Int(gridEntry.pos.x, gridEntry.pos.y, 0);
                 tilemapBase.SetTile(cell, tilesFarmBase[0]);
-                tilemapWall.SetTile(cell, tilesFarmWalls[GetWallIndex(pos, floorTiles)]);
+                tilemapWall.SetTile(cell, tilesFarmWalls[GetWallIndex(gridEntry.pos, floorTiles)]);
             }
 
             //Place loot 
-            foreach (var (pos, type) in room.loot)
+            foreach (GridEntry gridEntry in room.loot)
             {
-                var cell = new Vector3Int(pos.x, pos.y, 0);
+                var cell = new Vector3Int(gridEntry.pos.x, gridEntry.pos.y, 0);
                 tilemapBase.SetTile(cell, tilesFarmBase[0]);
-                spawnedLoot.Add(Instantiate(furnishingPrefabs[(int)type], tilemapBase.GetCellCenterWorld(cell), Quaternion.identity));
+                spawnedLoot.Add(Instantiate(furnishingPrefabs[(int)gridEntry.type], tilemapBase.GetCellCenterWorld(cell), Quaternion.identity));
             }
 
             // Queue enemies for spawning
-            foreach (var (pos, type) in room.enemies)
+            foreach (GridEntry gridEntry in room.enemies)
             {
-                var cell = new Vector3Int(pos.x, pos.y, 0);
+                var cell = new Vector3Int(gridEntry.pos.x, gridEntry.pos.y, 0);
                 tilemapBase.SetTile(cell, tilesFarmBase[0]);
-                enemiesToSpawn.Add((enemyPrefabs[(int)type], tilemapBase.GetCellCenterWorld(cell)));
+                enemiesToSpawn.Add((enemyPrefabs[(int)gridEntry.type], tilemapBase.GetCellCenterWorld(cell)));
             }
         }
 
@@ -167,7 +167,7 @@ public class MapInstantiator : MonoBehaviour
         // spawn player at first tile
         if (map.startRoom?.entryTile != null)
         {
-            var cell = new Vector3Int(map.startRoom.entryTile.Value.x, map.startRoom.entryTile.Value.y, 0);
+            var cell = new Vector3Int(map.startRoom.entryTile.x, map.startRoom.entryTile.y, 0);
             Vector3 spawnPos = tilemapBase.GetCellCenterWorld(cell);
 
             if (CurrentPlayer == null)
@@ -185,7 +185,7 @@ public class MapInstantiator : MonoBehaviour
         // Place portal at end room exit tile
         if (map.endRoom?.exitTile != null)
         {
-            var cell = new Vector3Int(map.endRoom.exitTile.Value.x, map.endRoom.exitTile.Value.y, 0);
+            var cell = new Vector3Int(map.endRoom.exitTile.x, map.endRoom.exitTile.y, 0);
             tilemapWall.SetTile(cell, null);
             levelManager.transform.position = tilemapBase.GetCellCenterWorld(cell);
         }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using static UnityEditor.Experimental.GraphView.GraphView;
+using System.Linq;
 
 public class LevelManager : MonoBehaviour
 {
@@ -15,14 +16,14 @@ public class LevelManager : MonoBehaviour
 
     private StateMachine[] machines;
 
-    // The active infinite loop queue: always 8 maps in fixed order
-    public Queue<MapArchiveExporter.MapDTO> finalMaps;
+    // The active infinite loop qMueue: always 8 maps in fixed order
+    public Queue<Map> finalMaps;
 
     // The exact 8 maps chosen for this run, preserved in order
-    public List<MapArchiveExporter.MapDTO> playedMaps;
+    public List<Map> playedMaps;
 
     //Used to save only the maps we need for build
-    public List<MapArchiveExporter.MapDTO> buildMaps;
+    public List<Map> buildMaps;
 
     float checkTimer;
 
@@ -30,10 +31,9 @@ public class LevelManager : MonoBehaviour
     Vector3 _playerSpawnPos;
     Player _player;
 
-    MapArchiveExporter.MapDTO playMap;
+    Map playMap;
 
-    List<List<Vector2Int>> optComps = new List<List<Vector2Int>>();
-    HashSet<Vector2Int> optTiles = new HashSet<Vector2Int>();
+    List<Room> optRooms = new List<Room>();
 
     bool _hasSpawnPos;
     bool _inCombat = false;
@@ -63,16 +63,16 @@ public class LevelManager : MonoBehaviour
 
     void Start()
     {
-        //string path = Path.Combine(Application.streamingAssetsPath, "buildMapsArchive.json");
-        string path = Path.Combine(Application.streamingAssetsPath, "handcrafted_maps.json");
-        var archive = MapArchiveExporter.LoadArchiveFromJson(path);
+        string path = Path.Combine(Application.streamingAssetsPath, "enemArchive_maps.json");
+        //string path = Path.Combine(Application.streamingAssetsPath, "handcrafted_maps.json");
+        var archive = MapJsonExporter.LoadMaps(path);
 
-        finalMaps = new Queue<MapArchiveExporter.MapDTO>();
-        playedMaps = new List<MapArchiveExporter.MapDTO>();
-        buildMaps = new List<MapArchiveExporter.MapDTO>();
+        finalMaps = new Queue<Map>();
+        playedMaps = new List<Map>();
+        buildMaps = new List<Map>();
 
         //BuildLevelLoop(archive.maps);
-        playedMaps = new List<MapArchiveExporter.MapDTO>(archive.maps);
+        playedMaps = new List<Map>(archive);
         RebuildQueueFromPlayedMaps();
 
         LoadNextMap();
@@ -89,20 +89,12 @@ public class LevelManager : MonoBehaviour
         if (checkTimer >= 1.0f && _player != null)
         {
             var playPos = new Vector2Int((int)_player.transform.position.x, (int)_player.transform.position.y);
-
-            if (optTiles.Contains(playPos))
+            foreach (var room in optRooms)
             {
-                telemetryManager.OptionalComponentEntered();
-
-                foreach (var component in optComps)
+                if (room.tiles.Any(t => t.pos == playPos))
                 {
-                    if (component.Contains(playPos))
-                    {
-                        foreach (var tile in component)
-                        {
-                            optTiles.Remove(tile);
-                        }
-                    }
+                    telemetryManager.OptionalRoomEntered();
+                    optRooms.Remove(room);
                 }
             }
 
@@ -188,8 +180,8 @@ public class LevelManager : MonoBehaviour
 
     void ReloadCurrentMap()
     {
-        FixOptComps(playMap);
-        mapInstantiator.makeMap(MapArchiveExporter.MapFromDto(playMap));
+        OptRoomTrig(playMap);
+        mapInstantiator.makeMap(playMap);
 
         StartCoroutine(WaitForEnemies());
 
@@ -203,7 +195,7 @@ public class LevelManager : MonoBehaviour
         };
 
         telemetryManager.SetBehavior(behaviors);
-        telemetryManager.SetTotalAmountOfOptionalComponents(playMap.optionalComponents.Count);
+        telemetryManager.SetTotalAmountOfOptionalRooms(optRooms.Count);
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -240,7 +232,7 @@ public class LevelManager : MonoBehaviour
         StartCoroutine(HookPlayerNextFrame());
     }
 
-    void BuildLevelLoop(List<MapArchiveExporter.MapDTO> archiveMaps)
+    void BuildLevelLoop(List<Map> archiveMaps)
     {
         playedMaps.Clear();
 
@@ -248,50 +240,50 @@ public class LevelManager : MonoBehaviour
         // INTRO LEVEL (always the same, always first)
         // Replace this rule with your actual intro-level behavior rule
         // ------------------------------------------------------------
-        var introRule = new System.Func<Vector2Int, Vector2Int, Vector2Int, MapArchiveExporter.MapDTO, bool>(
-            (geo, enem, furn, map) => enem.y == 1 && (enem.x == 63) && (geo.x == 1) && (furn.x == 4) && (furn.y == 1) // mix of enemies
+        var introRule = new System.Func<Map, bool>(
+            map => map.enemyBehavior.y == 1 && (map.enemyBehavior.x == 63) && (map.geoBehavior.x == 1) && (map.furnBehavior.x == 4) && (map.furnBehavior.y == 1) // mix of enemies
         );
 
         // ------------------------------------------------------------
         // HAND-PICKED DIFFICULTY 1 POOL (exactly 4)
         // One of these will be picked randomly
         // ------------------------------------------------------------
-        var difficulty1Rules = new List<System.Func<Vector2Int, Vector2Int, Vector2Int, MapArchiveExporter.MapDTO, bool>>
+        var difficulty1Rules = new List<System.Func<Map, bool>>
         {
-            (geo, enem, furn, map) => enem.y == 1 && (geo.x == 4) && (enem.x == 44) && (furn.x == 2) && (furn.y == 0), // small map, no health, no guardian
-            (geo, enem, furn, map) => enem.y == 1 && (geo.x == 10) && (enem.x == 50) && (furn.x == 4) && (furn.y == 2), // large, no guardian
+            map => map.enemyBehavior.y == 1 && (map.geoBehavior.x == 4) && (map.enemyBehavior.x == 44) && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 0), // small map, no health, no guardian
+            map => map.enemyBehavior.y == 1 && (map.geoBehavior.x == 10) && (map.enemyBehavior.x == 50) && (map.furnBehavior.x == 4) && (map.furnBehavior.y == 2), // large, no guardian
         };
 
         // ------------------------------------------------------------
         // HAND-PICKED DIFFICULTY 2 POOL (exactly 8)
         // Three of these will be picked randomly, preserving chosen order
         // ------------------------------------------------------------
-        var difficulty2Rules = new List<System.Func<Vector2Int, Vector2Int, Vector2Int, MapArchiveExporter.MapDTO, bool>>
+        var difficulty2Rules = new List<System.Func<Map, bool>>
         {
             //(geo, enem, furn, map) => enem.y == 2 && geo.x == 2 && (enem.x == 1) && (furn.x == 4) && (furn.y == 1), // All bombers and ranged
-            (geo, enem, furn, map) => geo.x == 3 && enem.y == 2 && (enem.x == 5) && (furn.x == 3) && (furn.y == 1), // ranged and guardian, small
-            (geo, enem, furn, map) => geo.x == 19 && enem.y == 2 && (enem.x == 51) && (furn.x == 3) && (furn.y == 2), // mainly melee
-            (geo, enem, furn, map) => geo.x == 69 && enem.y == 2 && (enem.x == 41) && (furn.x == 2) && (furn.y == 1), // Very large map
-            (geo, enem, furn, map) => geo.x == 31 && (enem.y == 2) && (enem.x == 41) && (furn.x == 2) && furn.y == 4, // almost only health
-            (geo, enem, furn, map) => geo.x == 4 && enem.y == 2 && enem.x == 38 && furn.x == 3 && furn.y == 0, // map
-            (geo, enem, furn, map) => geo.x == 11 && enem.y == 2 && enem.x == 27 && furn.x == 2 && furn.y == 0, // map
-            (geo, enem, furn, map) => geo.x == 12 && enem.y == 2 && enem.x == 31 && furn.x == 3 && furn.y == 2 // map
+            map => map.geoBehavior.x == 3 && map.enemyBehavior.y == 2 && (map.enemyBehavior.x == 5) && (map.furnBehavior.x == 3) && (map.furnBehavior.y == 1), // ranged and guardian, small
+            map => map.geoBehavior.x == 19 && map.enemyBehavior.y == 2 && (map.enemyBehavior.x == 51) && (map.furnBehavior.x == 3) && (map.furnBehavior.y == 2), // mainly melee
+            map => map.geoBehavior.x == 69 && map.enemyBehavior.y == 2 && (map.enemyBehavior.x == 41) && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 1), // Very large map
+            map => map.geoBehavior.x == 31 && (map.enemyBehavior.y == 2) && (map.enemyBehavior.x == 41) && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 4), // almost only health
+            map => map.geoBehavior.x == 4 && (map.enemyBehavior.y == 2) && (map.enemyBehavior.x == 38) && (map.furnBehavior.x == 3) && (map.furnBehavior.y == 0), // map
+            map => map.geoBehavior.x == 11 && (map.enemyBehavior.y == 2) && (map.enemyBehavior.x == 27) && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 0), // map
+            map => map.geoBehavior.x == 12 && (map.enemyBehavior.y == 2) && (map.enemyBehavior.x == 31) && (map.furnBehavior.x == 3) && (map.furnBehavior.y == 2), // map
         };
 
         // ------------------------------------------------------------
         // HAND-PICKED DIFFICULTY 3 POOL (exactly 8)
         // Three of these will be picked randomly, preserving chosen order
         // ------------------------------------------------------------
-        var difficulty3Rules = new List<System.Func<Vector2Int, Vector2Int, Vector2Int, MapArchiveExporter.MapDTO, bool>>
+        var difficulty3Rules = new List<System.Func<Map, bool>>
         {
-            (geo, enem, furn, map) => geo.x == 69 && enem.y == 3 && (enem.x == 41) && (furn.x == 1) && (furn.y == 2), // Very large map,
-            (geo, enem, furn, map) => geo.x == 18 && (enem.y == 3) && (enem.x == 41) && (furn.x == 3) && furn.y == 4, // almost only health
-            (geo, enem, furn, map) => geo.x == 4 && enem.y == 3 && enem.x == 84 && (furn.x == 2) && furn.y == 3, // guardian hell
-            (geo, enem, furn, map) => geo.x == 44 && enem.y == 3 && enem.x == 50 && furn.x == 2 && furn.y == 2, // idk cool map
-            (geo, enem, furn, map) => geo.x == 57 && enem.y == 3 && enem.x == 43 && furn.x == 2 && furn.y == 2, // idk cool map
-            (geo, enem, furn, map) => geo.x == 38 && enem.y == 3 && enem.x == 28 && furn.x == 2 && furn.y == 0, // little health (or loot)
-            (geo, enem, furn, map) => geo.x == 16 && enem.y == 3 && enem.x == 31 && furn.x == 1 && furn.y == 1, // idk cool map
-            (geo, enem, furn, map) => geo.x == 7 && enem.y == 3 && enem.x == 41 && (furn.x == 3) && (furn.y == 2) // smaller map, many melee
+            map => map.geoBehavior.x == 69 && map.enemyBehavior.y == 3 && (map.enemyBehavior.x == 41) && (map.furnBehavior.x == 1) && (map.furnBehavior.y == 2), // Very large map,
+            map => map.geoBehavior.x == 18 && (map.enemyBehavior.y == 3) && (map.enemyBehavior.x == 41) && (map.furnBehavior.x == 3) && (map.furnBehavior.y == 4), // almost only health
+            map => map.geoBehavior.x == 4 && map.enemyBehavior.y == 3 && map.enemyBehavior.x == 84 && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 3), // guardian hell
+            map => map.geoBehavior.x == 44 && map.enemyBehavior.y == 3 && map.enemyBehavior.x == 50 && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 2), // idk cool map
+            map => map.geoBehavior.x == 57 && map.enemyBehavior.y == 3 && map.enemyBehavior.x == 43 && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 2), // idk cool map
+            map => map.geoBehavior.x == 38 && map.enemyBehavior.y == 3 && map.enemyBehavior.x == 28 && (map.furnBehavior.x == 2) && (map.furnBehavior.y == 0), // little health (or loot)
+            map => map.geoBehavior.x == 16 && map.enemyBehavior.y == 3 && map.enemyBehavior.x == 31 && (map.furnBehavior.x == 1) && (map.furnBehavior.y == 1), // idk cool map
+            map => map.geoBehavior.x == 7 && map.enemyBehavior.y == 3 && map.enemyBehavior.x == 41 && (map.furnBehavior.x == 3) && (map.furnBehavior.y == 2) // smaller map, many melee
         };
 
         // Pick intro first
@@ -326,12 +318,9 @@ public class LevelManager : MonoBehaviour
         Debug.Log($"Built infinite level loop with {playedMaps.Count} maps.");
     }
 
-    List<MapArchiveExporter.MapDTO> BuildPoolFromRules(
-        List<MapArchiveExporter.MapDTO> archiveMaps,
-        List<System.Func<Vector2Int, Vector2Int, Vector2Int, MapArchiveExporter.MapDTO, bool>> rules,
-        string label)
+    List<Map> BuildPoolFromRules(List<Map> archiveMaps, List<System.Func<Map, bool>> rules, string label)
     {
-        var pool = new List<MapArchiveExporter.MapDTO>();
+        var pool = new List<Map>();
 
         for (int i = 0; i < rules.Count; i++)
         {
@@ -355,36 +344,19 @@ public class LevelManager : MonoBehaviour
         return pool;
     }
 
-    MapArchiveExporter.MapDTO FindFirstMatchingMap(
-        List<MapArchiveExporter.MapDTO> archiveMaps,
-        System.Func<Vector2Int, Vector2Int, Vector2Int, MapArchiveExporter.MapDTO, bool> rule)
+    Map FindFirstMatchingMap(List<Map> archiveMaps,System.Func<Map, bool> rule)
     {
         foreach (var map in archiveMaps)
         {
-            var geo = new Vector2Int(
-                Mathf.RoundToInt(map.geoBehavior[0]),
-                Mathf.RoundToInt(map.geoBehavior[1])
-            );
-
-            var enem = new Vector2Int(
-                Mathf.RoundToInt(map.enemyBehavior[0]),
-                Mathf.RoundToInt(map.enemyBehavior[1])
-            );
-
-            var furn = new Vector2Int(
-                Mathf.RoundToInt(map.furnBehavior[0]),
-                Mathf.RoundToInt(map.furnBehavior[1])
-            );
-
-            if (rule(geo, enem, furn, map))
+            if (rule(map))
                 return map;
         }
         return null;
     }
 
-    List<MapArchiveExporter.MapDTO> PickRandomUnique(List<MapArchiveExporter.MapDTO> pool, int count)
+    List<Map> PickRandomUnique(List<Map> pool, int count)
     {
-        var copy = new List<MapArchiveExporter.MapDTO>(pool);
+        var copy = new List<Map>(pool);
         Shuffle(copy);
 
         if (count > copy.Count)
@@ -427,8 +399,8 @@ public class LevelManager : MonoBehaviour
             finalMaps.Enqueue(playMap);
         }
 
-        FixOptComps(playMap);
-        mapInstantiator.makeMap(MapArchiveExporter.MapFromDto(playMap));
+        OptRoomTrig(playMap);
+        mapInstantiator.makeMap(playMap);
 
         StartCoroutine(WaitForEnemies());
         
@@ -442,7 +414,7 @@ public class LevelManager : MonoBehaviour
             playMap.enemyBehavior[1]
         };
         telemetryManager.SetBehavior(behaviors);
-        telemetryManager.SetTotalAmountOfOptionalComponents(playMap.optionalComponents.Count);
+        telemetryManager.SetTotalAmountOfOptionalRooms(optRooms.Count);
     }
 
     IEnumerator WaitForEnemies()
@@ -460,30 +432,17 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    void FixOptComps(MapArchiveExporter.MapDTO map)
+    // Triggers are optinal rooms that are removed when the player enters them for the first time
+    void OptRoomTrig(Map map)
     {
-        // These collections should only represent the CURRENT map.
-        // So yes, clearing them here is correct.
-        optTiles.Clear();
-        optComps.Clear();
+        optRooms.Clear();
 
-        foreach (var tile in map.optionalComponentTiles)
+        foreach (var room in map.rooms)
         {
-            var actualTile = mapInstantiator.tilemapBase.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
-            optTiles.Add(new Vector2Int((int)actualTile.x, (int)actualTile.y));
-        }
-
-        foreach (var component in map.optionalComponents)
-        {
-            var comp = new List<Vector2Int>();
-
-            foreach (var compTile in component.tiles)
+            if (!room.onMainPath)
             {
-                var correctedTile = mapInstantiator.tilemapBase.GetCellCenterWorld(new Vector3Int(compTile.x, compTile.y, 0));
-                comp.Add(new Vector2Int((int)correctedTile.x, (int)correctedTile.y));
+                optRooms.Add(room);
             }
-
-            optComps.Add(comp);
         }
     }
 
