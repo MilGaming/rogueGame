@@ -11,9 +11,9 @@ public class MapElite : MonoBehaviour
     [SerializeField] int totalIterations = 50;       // I
     [SerializeField] int initialRandomSolutions = 20; // G
 
-    private Dictionary<Vector2, MapCandidate> geoArchive = new Dictionary<Vector2, MapCandidate>();
-    private Dictionary<(Vector2, Vector2), MapCandidate> furnArchive = new Dictionary<(Vector2, Vector2), MapCandidate>();
-    private Dictionary<(Vector2, Vector2, Vector2), MapCandidate> enemArchive = new Dictionary<(Vector2, Vector2, Vector2), MapCandidate>();
+    private Dictionary<Vector2, Map> geoArchive = new Dictionary<Vector2, Map>();
+    private Dictionary<(Vector2, Vector2), Map> furnArchive = new Dictionary<(Vector2, Vector2), Map>();
+    private Dictionary<(Vector2, Vector2, Vector2), Map> enemArchive = new Dictionary<(Vector2, Vector2, Vector2), Map>();
 
     private void Awake()
     {
@@ -22,14 +22,13 @@ public class MapElite : MonoBehaviour
     void Start()
     {
         RunMapElitesGeometry();
-        MapArchiveExporter.ExportArchiveToJson(geoArchive.Values, "geoArchive_maps.json");
+        //MapArchiveExporter.ExportArchiveToJson(geoArchive.Values, "geoArchive_maps.json");
 
         RunMapElitesFurnishing();
-        MapArchiveExporter.ExportArchiveToJson(furnArchive.Values, "furnArchive_maps.json");
+        //MapArchiveExporter.ExportArchiveToJson(furnArchive.Values, "furnArchive_maps.json");
 
         RunMapElitesEnemies();
-        MapArchiveExporter.ExportArchiveToJson(enemArchive.Values, "enemArchive_maps.json");
-      
+        //MapArchiveExporter.ExportArchiveToJson(enemArchive.Values, "enemArchive_maps.json");
     }
 
 
@@ -50,7 +49,7 @@ public class MapElite : MonoBehaviour
         for (int i = 0; i < totalIterations; i++)
         {
             // --- Generate candidate ---
-            MapCandidate candidate;
+            Map candidate;
             if (iter <= initialRandomSolutions)
             {
                 candidate = GenerateRandomGeometry();
@@ -59,16 +58,14 @@ public class MapElite : MonoBehaviour
             else
             {
                 //MapCandidate parent = SelectRandomGeometry(); OLD
-                MapCandidate parent = SelectRandom(geoArchive);
+                Map parent = SelectRandom(geoArchive);
                 candidate = MutateGeometry(parent);
             }
 
             // behavior + fitness
-            candidate.geoBehavior = new Vector2(
-                BehaviorFunctions.GetComponentCountBehavior(candidate.mapData),
-                0
-            );
-            candidate.geoFitness = FitnessFunctions.GetGeometryFitness(candidate);
+            var (fitness, behavior) = GeoFitAndBehav.GetGeoFitnessAndBehavior(candidate);
+            candidate.geoBehavior = new Vector2(behavior, 0);
+            candidate.geoFitness = fitness;
 
             // Store candidate + track delta on overwrite
             var key = candidate.geoBehavior;
@@ -133,7 +130,7 @@ public class MapElite : MonoBehaviour
         for (int i = 0; i < totalIterations * 3; i++)
         {
             // Generate candidate
-            MapCandidate candidate;
+            Map candidate;
             if (iter <= initialRandomSolutions)
             {
                 candidate = GenerateRandomEnemies(SelectRandom(furnArchive));
@@ -141,14 +138,14 @@ public class MapElite : MonoBehaviour
             }
             else
             {
-                MapCandidate parent = SelectRandom(enemArchive);
+                Map parent = SelectRandom(enemArchive);
                 candidate = MutateEnemies(parent);
             }
 
             //behavior + fitness
-            candidate.enemyBehavior = new Vector2(BehaviorFunctions.EnemyRoleCompositionBehavior(candidate.mapData.enemies, 20), BehaviorFunctions.EnemyDifficultyBehavior(candidate.mapData));
-
-            candidate.enemFitness = FitnessFunctions.GetEnemyFitness(candidate);
+            var (fitness, behavior) = EnemFitAndBehav.GetEnemyFitnessAndBehavior(candidate);
+            candidate.enemyBehavior = new Vector2(behavior.enemyType, behavior.difficulty);
+            candidate.enemFitness = fitness;
 
             // Store candidate + track delta on overwrite
             var key = (candidate.geoBehavior, candidate.furnBehavior, candidate.enemyBehavior);
@@ -211,7 +208,7 @@ public class MapElite : MonoBehaviour
         for (int i = 0; i < totalIterations; i++)
         {
             // Generate candidate
-            MapCandidate candidate;
+            Map candidate;
             if (iter <= initialRandomSolutions)
             {
                 candidate = GenerateRandomFurnishing(SelectRandom(geoArchive));
@@ -219,14 +216,14 @@ public class MapElite : MonoBehaviour
             }
             else
             {
-                MapCandidate parent = SelectRandom(furnArchive);
+                Map parent = SelectRandom(furnArchive);
                 candidate = MutateFurnishing(parent);
             }
 
             // behavior + fitness 
-            candidate.furnBehavior = new Vector2(BehaviorFunctions.FurnishingBehaviorExploration(candidate.mapData), BehaviorFunctions.FurnishingBehaviorSafety(candidate.mapData));
-
-            candidate.furnFitness = FitnessFunctions.GetFurnishingFitness(candidate);
+            var (fitness, behavior) = FurnFitAndBehav.GetFurnFitnessAndBehavior(candidate);
+            candidate.furnBehavior = new Vector2(behavior.lootDensity, behavior.obstacleDensity);
+            candidate.furnFitness = fitness;
 
             // Store candidate + track delta on overwrite
             var key = (candidate.geoBehavior, candidate.furnBehavior);
@@ -269,21 +266,21 @@ public class MapElite : MonoBehaviour
         File.WriteAllText(path, sb.ToString());
     }
 
-    MapCandidate GenerateRandomGeometry()
+    Map GenerateRandomGeometry()
     {
         /*MapCandidate candidate = new MapCandidate(mapGenerator.MakeMap());
         return candidate;*/
         var map = new Map();
         GeometryGenerator.CreateMapGeometry(map);
         GeometryGenerator.BuildRoomTopology(map);
-        return new MapCandidate(map);
+        return new Map(map);
 
     }
 
-    MapCandidate GenerateRandomEnemies(MapCandidate parent)
+    Map GenerateRandomEnemies(Map parent)
     {
-        var child = new MapCandidate(parent.mapData.Clone());
-        ObjectPlacementGenerator.CreateEnemiesOnMap(child.mapData);
+        var child = new Map(parent.Clone());
+        ObjectPlacementGenerator.CreateEnemiesOnMap(child);
 
         child.geoBehavior = parent.geoBehavior;
         child.geoFitness = parent.geoFitness;
@@ -293,11 +290,11 @@ public class MapElite : MonoBehaviour
         return child;
     }
 
-    MapCandidate GenerateRandomFurnishing(MapCandidate parent)
+    Map GenerateRandomFurnishing(Map parent)
     {
-        var child = new MapCandidate(parent.mapData.Clone());
-        ObjectPlacementGenerator.CreateLootOnMap(child.mapData);
-        ObjectPlacementGenerator.CreateObstaclesOnMap(child.mapData);
+        var child = new Map(parent.Clone());
+        ObjectPlacementGenerator.CreateLootOnMap(child);
+        ObjectPlacementGenerator.CreateObstaclesOnMap(child);
 
         child.geoBehavior = parent.geoBehavior;
         child.geoFitness = parent.geoFitness;
@@ -323,27 +320,27 @@ public class MapElite : MonoBehaviour
         return enemArchive.Values.ToList()[Random.Range(0, enemArchive.Count)];
     }*/
 
-MapCandidate SelectRandom<TKey>(Dictionary<TKey, MapCandidate> archive)
+Map SelectRandom<TKey>(Dictionary<TKey, Map> archive)
 {
     var list = archive.Values.ToList();
     return list[Random.Range(0, list.Count)];
 }
 
-    MapCandidate MutateGeometry(MapCandidate parent)
+    Map MutateGeometry(Map parent)
     {
         /*var child = new MapCandidate(parent.mapData.Clone());
         child.mapData = mapGenerator.mutateGeometry(child.mapData);
         return child;*/
 
-        var child = new MapCandidate(parent.mapData.Clone());
-        GeometryGenerator.MutateMapGeometry(child.mapData);
-        GeometryGenerator.BuildRoomTopology(child.mapData);
+        var child = new Map(parent.Clone());
+        GeometryGenerator.MutateMapGeometry(child);
+        GeometryGenerator.BuildRoomTopology(child);
         return child;
     }
 
-    MapCandidate MutateEnemies(MapCandidate parent)
+    Map MutateEnemies(Map parent)
     {
-        var child = new MapCandidate(parent.mapData.Clone());
+        var child = new Map(parent.Clone());
 
         /*child.geoBehavior = new Vector2(parent.geoBehavior.x, parent.geoBehavior.y);
         child.geoFitness = parent.geoFitness;
@@ -351,8 +348,8 @@ MapCandidate SelectRandom<TKey>(Dictionary<TKey, MapCandidate> archive)
         child.furnFitness = parent.furnFitness;
         child.mapData = mapGenerator.mutateEnemies(child.mapData);*/
 
-        ObjectPlacementGenerator.MutateLoot(child.mapData);
-        ObjectPlacementGenerator.MutateObstacles(child.mapData);
+        ObjectPlacementGenerator.MutateLoot(child);
+        ObjectPlacementGenerator.MutateObstacles(child);
 
         child.geoBehavior = parent.geoBehavior;
         child.geoFitness = parent.geoFitness;
@@ -360,11 +357,11 @@ MapCandidate SelectRandom<TKey>(Dictionary<TKey, MapCandidate> archive)
         return child;
     }
 
-    MapCandidate MutateFurnishing(MapCandidate parent)
+    Map MutateFurnishing(Map parent)
     {
-        var child = new MapCandidate(parent.mapData.Clone());
-        ObjectPlacementGenerator.MutateLoot(child.mapData);
-        ObjectPlacementGenerator.MutateObstacles(child.mapData);
+        var child = new Map(parent.Clone());
+        ObjectPlacementGenerator.MutateLoot(child);
+        ObjectPlacementGenerator.MutateObstacles(child);
 
         /*child.geoBehavior = new Vector2(parent.geoBehavior.x, parent.geoBehavior.y);
         child.geoFitness = parent.geoFitness;*/
