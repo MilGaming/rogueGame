@@ -27,12 +27,19 @@ public class Map
 {
     public List<Room> rooms = new ();
     public List<RoomConnection> connections = new();
-
     public Room startRoom;
     public Room endRoom;
 
     public List<Room> mainPathRooms = new();
+    public float geoFitness = 0f;
+    public float enemFitness = 0f;
+    public float furnFitness = 0f;
 
+    public float CombinedFitness => geoFitness + enemFitness + furnFitness;
+    // Behavior slices
+    public Vector2 geoBehavior = new Vector2Int();
+    public Vector2 furnBehavior = new Vector2Int();
+    public Vector2 enemyBehavior = new Vector2Int();
     public Map() { }
     public Map(Map other)
     {
@@ -222,31 +229,6 @@ public class RoomConnection
     public Vector2Int tileB;
 
     public float length;
-}
-
-public class MapCandidate
-{
-    public float geoFitness;
-    public float enemFitness;
-    public float furnFitness;
-    public Map mapData;
-
-    public float CombinedFitness => geoFitness + enemFitness + furnFitness;
-    // Behavior slices
-    public Vector2 geoBehavior;
-    public Vector2 furnBehavior;
-    public Vector2 enemyBehavior;
-
-    public MapCandidate(Map map)
-    {
-        mapData = map;
-        geoFitness = 0f;
-        enemFitness = 0f;
-        furnFitness = 0f;
-        geoBehavior = new Vector2();
-        furnBehavior = new Vector2();
-        enemyBehavior = new Vector2();
-    }
 }
 
 public enum EnemyType
