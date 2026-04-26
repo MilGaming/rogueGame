@@ -1196,6 +1196,8 @@ MonoBehaviour:
   loadout1: {fileID: 2309025320568203980, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   loadout2: {fileID: 6746212188434358048, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   loadout3: {fileID: 3336754527515615096, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  skip: {fileID: 3449483443161272715, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  restart: {fileID: 6352867242866497520, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!50 &7512121947329450310
 Rigidbody2D:
   serializedVersion: 5

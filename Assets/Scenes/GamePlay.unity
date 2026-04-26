@@ -1154,13 +1154,6 @@ MonoBehaviour:
   - {fileID: 6164719104617455019, guid: abf53ad0b1047f34186039c8e4cc5f35, type: 3}
   - {fileID: 7378334077991207350, guid: 6ce7d400bf1a1ce4c89b300c286f1af8, type: 3}
   - {fileID: 7378334077991207350, guid: 90ef62bb5f6b7dc41a05c14905a2b7c1, type: 3}
-  furnishingPrefabs:
-  - {fileID: 5086782275875845498, guid: ec1788206efa39844adcbd6b83cb961d, type: 3}
-  - {fileID: 5086782275875845498, guid: f72e9067ce93c154dab0e4696bc751e5, type: 3}
-  - {fileID: 5086782275875845498, guid: dc96e9ca3968af74b8b7bb7fba775a52, type: 3}
-  - {fileID: 5086782275875845498, guid: 3b6a584d68eae7349b7377d4c354e96f, type: 3}
-  - {fileID: 7478037528052263297, guid: ed534ca038c4da141b60375581a40542, type: 3}
-  - {fileID: 7478037528052263297, guid: c82706e725f2f8148bb5e94378943127, type: 3}
   lootPrefabs:
   - {fileID: 7478037528052263297, guid: c82706e725f2f8148bb5e94378943127, type: 3}
   - {fileID: 7478037528052263297, guid: ed534ca038c4da141b60375581a40542, type: 3}
@@ -1229,7 +1222,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8d89683a442c9e459dc4e55422f1938, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TelemetrySender
-  webAppUrl: https://script.google.com/macros/s/AKfycbwX-RyBc_R6W6aqRHl6RIzUF2k-wfylj7r6SGQOCJmK04opkUpb92Zpji3OTEMkRB2A/exec
+  webAppUrl: https://script.google.com/macros/s/AKfycbz_cKb8qIPiAt15s_gNel7HpOCnMPGLR_C3S7lmuRFucRBP4lHrQscHCVXyydgGfzcZ/exec
 --- !u!114 &859900378
 MonoBehaviour:
   m_ObjectHideFlags: 0

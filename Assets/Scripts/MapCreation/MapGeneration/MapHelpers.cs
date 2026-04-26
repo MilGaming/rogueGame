@@ -341,23 +341,20 @@ public class RoomChunk
 
     public bool Overlaps(RoomChunk other, int clearance = 1)
     {
-        bool xOverlap =
-            (XMin - clearance) <= other.XMax &&
-            (XMax + clearance) >= other.XMin;
+         bool xOverlap =
+        (XMin - clearance) <= other.XMax &&
+        (XMax + clearance) >= other.XMin;
 
         bool yOverlap =
             (YMin - clearance) <= other.YMax &&
             (YMax + clearance) >= other.YMin;
 
-        bool xNear = 
-            (XMin - clearance) <= other.XMax && 
-            (XMax + clearance) >= other.XMin;
-        bool yNear = 
-            (YMin - clearance) <= other.YMax && 
-            (YMax + clearance) >= other.YMin;
+        // Check if they only touch at a corner
+        bool cornerOnly =
+            (XMax + clearance == other.XMin || XMin - clearance == other.XMax) &&
+            (YMax + clearance == other.YMin || YMin - clearance == other.YMax);
 
-
-        return (xOverlap && yNear) || (yOverlap && xNear);
+        return xOverlap && yOverlap && !cornerOnly;
     }
 }
 

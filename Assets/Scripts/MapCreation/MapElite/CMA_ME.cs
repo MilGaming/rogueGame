@@ -4,22 +4,22 @@ using System.Linq;
 using UnityEngine;
 using System.Text;
 using JetBrains.Annotations;
-using UnityEditorInternal;
+//using UnityEditorInternal;
 using System;
-using static UnityEditor.Progress;
+//using static UnityEditor.Progress;
 
 public class CMA_ME : MapElite
 {
     protected override void Start()
     {
         RunMapElitesGeometry();
-        MapJsonExporter.SaveMaps(geoArchive.Values.ToList(), "geoArchive_maps.json");
+        MapJsonExporter.SaveMaps(geoArchive.Values.ToList(), "geoArchiveEasy_maps.json");
 
         RunMapElitesFurnishing();
-        MapJsonExporter.SaveMaps(furnArchive.Values.ToList(), "furnArchive_maps.json");
+        MapJsonExporter.SaveMaps(furnArchive.Values.ToList(), "furnArchiveEasy_maps.json");
 
         RunCMA_EMEnemies();
-        MapJsonExporter.SaveMaps(enemArchive.Values.ToList(), "enemArchive_maps.json");
+        MapJsonExporter.SaveMaps(enemArchive.Values.ToList(), "enemArchiveEasy_maps.json");
     }
 
 

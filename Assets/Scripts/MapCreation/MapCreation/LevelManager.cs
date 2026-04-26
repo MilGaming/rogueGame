@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using static UnityEditor.Experimental.GraphView.GraphView;
+//using static UnityEditor.Experimental.GraphView.GraphView;
 using System.Linq;
+using UnityEngine.InputSystem;
 
 public class LevelManager : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class LevelManager : MonoBehaviour
     [SerializeField] TelemetryManager telemetryManager;
     [SerializeField] CircleCollider2D col;
     [SerializeField] SpriteRenderer sprite;
-    [SerializeField] AutoRecorder autoRecorder;
+    //[SerializeField] AutoRecorder autoRecorder;
 
     private StateMachine[] machines = System.Array.Empty<StateMachine>();
 
@@ -24,6 +25,8 @@ public class LevelManager : MonoBehaviour
 
     //Used to save only the maps we need for build
     public List<Map> buildMaps;
+
+    public InputActionReference skipLevel;
 
     float checkTimer;
 
@@ -40,6 +43,8 @@ public class LevelManager : MonoBehaviour
 
     bool clearedTutorial = false;
 
+    int mapCounter = 0;
+
     private void OnEnable() => MapInstantiator.OnPlayerSpawned += HandlePlayerSpawned;
     private void OnDisable() => MapInstantiator.OnPlayerSpawned -= HandlePlayerSpawned;
 
@@ -49,8 +54,8 @@ public class LevelManager : MonoBehaviour
 
     void Awake()
     {
-        if (autoRecorder == null)
-            autoRecorder = FindFirstObjectByType<AutoRecorder>();
+        /*if (autoRecorder == null)
+            autoRecorder = FindFirstObjectByType<AutoRecorder>();*/
         if (mapInstantiator == null)
             mapInstantiator = FindFirstObjectByType<MapInstantiator>();
 
@@ -63,7 +68,7 @@ public class LevelManager : MonoBehaviour
 
     void Start()
     {
-        string path = Path.Combine(Application.streamingAssetsPath, "enemArchive_maps.json");
+        string path = Path.Combine(Application.streamingAssetsPath, "DiverseEliteNew_Maps.json");
         //string path = Path.Combine(Application.streamingAssetsPath, "handcrafted_maps.json");
         var archive = MapJsonExporter.LoadMaps(path);
 
@@ -71,16 +76,24 @@ public class LevelManager : MonoBehaviour
         playedMaps = new List<Map>();
         buildMaps = new List<Map>();
 
+        
+
         //BuildLevelLoop(archive.maps);
         playedMaps = new List<Map>(archive);
         RebuildQueueFromPlayedMaps();
 
         LoadNextMap();
-        LoadNextMap();
 
         _hasSpawnPos = false;
         CacheSpawnAndHookPlayer();
     }
+
+    /*void OnEnable()
+    {
+        skipLevel.action.performed += OnSkipLevel;
+        skipLevel.action.Enable();
+        MapInstantiator.OnPlayerSpawned += HandlePlayerSpawned;
+    }*/
 
     private void Update()
     {
@@ -155,10 +168,10 @@ public class LevelManager : MonoBehaviour
         telemetryManager.SetTotalScore(_player.GetScore());
         telemetryManager.UploadData();
         telemetryManager.ResetStats(true);
-        if (autoRecorder != null)
+        /*if (autoRecorder != null)
         {
             autoRecorder.RestartRecordingAndSave();
-        }
+        }*/
 
         _player.OnDied -= HandlePlayerDied;
         Destroy(_player.gameObject);
@@ -197,6 +210,10 @@ public class LevelManager : MonoBehaviour
 
         telemetryManager.SetBehavior(behaviors);
         telemetryManager.SetTotalAmountOfOptionalRooms(optRooms.Count);
+        if(mapCounter >= 17)
+        {
+            _player.IncreaseScore(50000);
+        }
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -369,6 +386,7 @@ public class LevelManager : MonoBehaviour
     void RebuildQueueFromPlayedMaps()
     {
         finalMaps.Clear();
+        Shuffle(playedMaps);
 
         foreach (var map in playedMaps)
         {
@@ -378,27 +396,34 @@ public class LevelManager : MonoBehaviour
 
     void LoadNextMap()
     {
+        mapCounter += 1;
         if (finalMaps.Count == 0)
         {
             Debug.LogError("No maps available in finalMaps.");
             return;
         }
+        if(mapCounter >= 17)
+        {
+            _player.ResetScore();
+            _player.IncreaseScore(50000);
+        }
         //Remove tutorial map from rotation
-        if (finalMaps.Count == 7 && !clearedTutorial)
+        /*if (finalMaps.Count == 7 && !clearedTutorial)
         {
             clearedTutorial = true;
             playedMaps.Remove(playMap);
             //Debug.Log("here");
-        }
+        }*/
         //_player.ResetStats();
 
         // Preserve order while looping infinitely:
         // take front map, play it, then put it at the back
         playMap = finalMaps.Dequeue();
-        if(finalMaps.Count < 7)
+        /*if(finalMaps.Count < 7)
         {
             finalMaps.Enqueue(playMap);
-        }
+        }*/
+        finalMaps.Enqueue(playMap);
 
         OptRoomTrig(playMap);
         mapInstantiator.makeMap(playMap);
@@ -468,5 +493,20 @@ public class LevelManager : MonoBehaviour
     {
         var t = GetCurrentBehaviorTuple();
         return $"({t.geoX}, {t.geoY}, {t.furnX}, {t.furnY}, {t.enemyX}, {t.enemyY})";
+    }
+
+    public void SkipLevel()
+    {
+        telemetryManager.MapSkipped();
+        telemetryManager.SetTotalScore(_player.GetScore());
+        telemetryManager.UploadData();
+        telemetryManager.ResetStats(false);
+        _player.ResetStats();
+        LoadNextMap();
+    }
+
+    public void ForceLevelRestart()
+    {
+        HandlePlayerDied(null);
     }
 }

@@ -59,9 +59,6 @@ public class RandomMapGenerator : MonoBehaviour
             var (fitness, behavior) = EnemFitAndBehav.GetEnemyFitnessAndBehavior(newEneMap);
             newEneMap.enemyBehavior = new Vector2Int(behavior.enemyType, behavior.difficulty);
             newEneMap.enemFitness = fitness;
-            Debug.Log("Geo: " + newEneMap.geoBehavior);
-            Debug.Log("Furn: " + newEneMap.furnBehavior);
-            Debug.Log("Ene: " + newEneMap.enemyBehavior);
             enemArchive.Add(newEneMap);
         }
         MapJsonExporter.SaveMaps(enemArchive, "Random_Maps.json");

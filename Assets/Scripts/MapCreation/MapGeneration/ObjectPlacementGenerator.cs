@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using UnityEditor.Profiling.Memory.Experimental;
-using UnityEditor.Timeline;
+//using UnityEditor.Profiling.Memory.Experimental;
+//using UnityEditor.Timeline;
 using UnityEngine;
-using static UnityEditor.Recorder.OutputPath;
+//using static UnityEditor.Recorder.OutputPath;
 
 public static class ObjectPlacementGenerator
 {
@@ -45,6 +45,10 @@ public static class ObjectPlacementGenerator
             * room.orderModifier
             * Random.Range(budgetModifierRange.x, budgetModifierRange.y);
             room.enemyBudgetUsed = 0f;
+            if (room.enemyBudget < room.tiles.Count * 0.03f)
+            {
+                room.enemyBudget = room.tiles.Count * 0.03f;
+            }
             // Place enemies
             while (room.enemyBudgetUsed < room.enemyBudget) {
                 bool success = PlaceRandomEnemy(room, occupiedPositions, new float[MapHelpers.EnemyTypes.Length]);
@@ -76,7 +80,10 @@ public static class ObjectPlacementGenerator
             * roomToMutate.orderModifier
             * Random.Range(budgetModifierRange.x, budgetModifierRange.y)
             * (1f + diffBias * 0.25f); ; // diff bias is -1 to 1, so now 0.75 to 1.25.
-
+            if (roomToMutate.enemyBudget < roomToMutate.tiles.Count * 0.03f)
+            {
+                roomToMutate.enemyBudget = roomToMutate.tiles.Count * 0.03f;
+            }
             while (roomToMutate.enemyBudgetUsed > roomToMutate.enemyBudget)
             {
                 RemoveRandomEnemy(roomToMutate, occupiedPositions, compBias);

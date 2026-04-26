@@ -6,7 +6,7 @@ using h = FitnessAndBehaviorHelpers;
 
 public static class EnemFitAndBehav
 {
-    private const float MaxDifficultyDensityForBehavior = 0.15f;
+    private const float MaxDifficultyDensityForBehavior = 0.09f;
     // How many enemies does loot counteract
     private const float lootCounteract = 0.5f;
 
@@ -151,8 +151,9 @@ public static class EnemFitAndBehav
     // 0 → completely different compositions
     public static float GetCompositionSimilarity(float[] a, float[] b)
     {
-        if (a == null || b == null || a.Length != b.Length)
+        if (a == null || b == null || a.Length != b.Length){
             return 0f;
+        }
 
         float diff = 0f;
 
