@@ -250,7 +250,7 @@ public static class GeometryGenerator
 
             if (mainPathCount <= 1)
             {
-                room.orderModifier = 0f;
+                room.orderModifier = 0.5f;
             }
             else
             {

@@ -12,6 +12,8 @@ public class TelemetryManager : MonoBehaviour
 
     TelemetrySender telemetrySender;
     bool timerStarted;
+
+    int mapSkipped = 0;
     float timePlayed;
 
     float playerDeaths;
@@ -138,6 +140,11 @@ public class TelemetryManager : MonoBehaviour
         totalEnemies = enemies;
     }
 
+    public void MapSkipped()
+    {
+        mapSkipped = 1;
+    }
+
     public void SetTotalLoot(float loot)
     {
         totalLoot = loot;
@@ -217,6 +224,7 @@ public class TelemetryManager : MonoBehaviour
             TotalScore = totalScore,
             MapScore = CurrentMapScore,
             MapScorePercentage = CurrentMapScore/TotalMapScore * 100f,
+            MapSkipped = mapSkipped,
             enemiesKilledPct = eneKilledPerc,
             HealthBarrelsTaken = healthBarrelsTaken,
             PowerUpsTaken = powerUpsTaken,
@@ -492,6 +500,7 @@ public class TelemetryManager : MonoBehaviour
         timePlayed = 0f;
         CurrentMapScore = 0f;
         TotalMapScore = 0f;
+        mapSkipped = 0;
         if (levelCleared)
         {
             playerDeaths = 0;
@@ -694,6 +703,8 @@ public struct TelemetryData
     public float TotalScore;
     public float MapScore;
     public float MapScorePercentage;
+
+    public int MapSkipped;
     public float enemiesKilledPct;
     public float HealthBarrelsTaken;
     public float PowerUpsTaken;
@@ -802,6 +813,5 @@ public struct TelemetryData
     public int BerserkerDefenseToBomber;
     public int BerserkerDefenseToAssasssin;
     public int BerserkerDefenseToGuardian;
-
 
 }

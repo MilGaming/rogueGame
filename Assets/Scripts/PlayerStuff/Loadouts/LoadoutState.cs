@@ -79,6 +79,9 @@ public class LoadoutState : MonoBehaviour
     public InputActionReference loadout3;  
 
 
+    public InputActionReference skip;
+
+    public InputActionReference restart;
     Camera cam;
 
     void Awake()
@@ -236,6 +239,7 @@ public class LoadoutState : MonoBehaviour
 
     void OnEnable()
     {
+        
         attack.action.started += OnAttackStarted;
         attack.action.canceled += OnAttackCanceled;
         dash.action.started += OnDashStarted;
@@ -245,6 +249,8 @@ public class LoadoutState : MonoBehaviour
         loadout1.action.performed += OnLoadout1;
         loadout2.action.performed += OnLoadout2;
         loadout3.action.performed += OnLoadout3;
+        skip.action.performed += OnSkip;
+        restart.action.performed += OnRestart;
 
         loadout1.action.Enable();
         loadout2.action.Enable();
@@ -255,6 +261,9 @@ public class LoadoutState : MonoBehaviour
         def.action.Enable();
         attack.action.Enable();
         dash.action.Enable();
+
+        skip.action.Enable();
+        restart.action.Enable();
 
     }
 
@@ -269,6 +278,8 @@ public class LoadoutState : MonoBehaviour
         loadout1.action.performed -= OnLoadout1;
         loadout2.action.performed -= OnLoadout2;
         loadout3.action.performed -= OnLoadout3;
+        skip.action.performed -= OnSkip;
+        restart.action.performed -= OnRestart;
 
         loadout1.action.Disable();
         loadout2.action.Disable();
@@ -279,6 +290,10 @@ public class LoadoutState : MonoBehaviour
         def.action.Disable();
         attack.action.Disable();
         dash.action.Disable();
+
+        
+        skip.action.Disable();
+        restart.action.Disable();
     }
 
     void OnLoadout1(InputAction.CallbackContext ctx)
@@ -575,5 +590,15 @@ public class LoadoutState : MonoBehaviour
     public void RefundDefCD()
     {
         nextDefTime = Time.time;
+    }
+
+    public void OnSkip(InputAction.CallbackContext ctx)
+    {
+        levelManager.SkipLevel();
+    }
+
+    public void OnRestart(InputAction.CallbackContext ctx)
+    {
+        levelManager.ForceLevelRestart();
     }
 }
