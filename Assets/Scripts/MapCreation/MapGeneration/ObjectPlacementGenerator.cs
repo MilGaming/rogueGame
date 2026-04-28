@@ -13,11 +13,11 @@ public static class ObjectPlacementGenerator
     // The minimum ratio of powerups to health we want in optional rooms
     public const float PowerRatioInOptional = 0.6f;
 
-    public const float DefaultMutateSize = 0.2f;
+    public const float DefaultMutateSize = 0.3f;
 
-    public const float BiasStrength = 2f;
+    public const float BiasStrength = 3f;
 
-    public static readonly Vector2 DefaultBudgetModifierRange = new(0.5f, 3f);
+    public static readonly Vector2 DefaultBudgetModifierRange = new(0.5f, 1.5f);
 
     // Base budget before modifiers
     public const int DefaultEnemyBaseBudget = 3;

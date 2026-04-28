@@ -256,7 +256,7 @@ public static class GeometryGenerator
             {
                 //get the relative order from 0-1
                 float t = (room.orderIndex - 1f) / (mainPathCount - 1f); 
-                room.orderModifier = Mathf.Clamp(t * 1.5f, 0.5f, 1.5f); 
+                room.orderModifier = Mathf.Clamp(t, 0.5f, 1f); 
             }
         }
     }

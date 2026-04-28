@@ -25,9 +25,9 @@ public class CMA_ME : MapElite
 
     private void RunCMA_EMEnemies()
     {
-        // Make 10 emitters, starting random places
+        // Make 15 emitters, starting random places
         List<Emitter> emitters = new List<Emitter>();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 15; i++) {
             emitters.Add(new Emitter(furnArchive));
         }
 
@@ -89,7 +89,7 @@ public class CMA_ME : MapElite
         public int totalGenerated = 0;
 
         // Batch size before update / restart
-        public const int lambda = 10;
+        public const int lambda = 30;
 
         public Emitter(Dictionary<(Vector2, Vector2), Map> archive)
         {
