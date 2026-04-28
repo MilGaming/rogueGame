@@ -26,6 +26,8 @@ public class CMA_ME : MapElite
 
     private void RunCMA_EMEnemies()
     {
+        int completedEnem = 0;
+
         List<Emitter> emitters = new List<Emitter>();
         for (int i = 0; i < 15; i++)
             emitters.Add(new Emitter(furnArchive));
@@ -52,7 +54,7 @@ public class CMA_ME : MapElite
 
         var options = new System.Threading.Tasks.ParallelOptions
         {
-            MaxDegreeOfParallelism = 15
+            MaxDegreeOfParallelism = System.Environment.ProcessorCount - 2 // leave some cores free
         };
 
         System.Threading.Tasks.Parallel.ForEach(emitters, options, e =>
@@ -64,9 +66,13 @@ public class CMA_ME : MapElite
                 candidate.enemFitness = fitness;
                 candidate.enemyBehavior = new Vector2Int(behavior.enemyType, behavior.difficulty);
                 e.ReturnSolution(candidate, safeArchive);
+
+                int completed = System.Threading.Interlocked.Increment(ref completedEnem);
+                if (trainingLogger != null && completed % trainingLogger.LogEveryNIterations == 0)
+                    trainingLogger.LogEnemies(completed, new Dictionary<(Vector2, Vector2, Vector2), Map>(safeArchive));
             }
         });
-        trainingLogger?.LogEnemies(totalIterations * 3, enemArchive);
+        //trainingLogger?.LogEnemies(totalIterations * 3, enemArchive);
 
         // Copy back to enemArchive if needed elsewhere
         foreach (var kvp in safeArchive)

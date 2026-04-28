@@ -42,10 +42,11 @@ public class MapElite : MonoBehaviour
     public void RunMapElitesGeometry()
     {
         var safeArchive = new ConcurrentDictionary<Vector2, Map>();
+        int completedIterations = 0;
 
         var options = new System.Threading.Tasks.ParallelOptions
         {
-            MaxDegreeOfParallelism = 15
+            MaxDegreeOfParallelism = System.Environment.ProcessorCount - 2 // leave some cores free
         };
 
         System.Threading.Tasks.Parallel.For(0, totalIterations, options, i =>
@@ -71,12 +72,18 @@ public class MapElite : MonoBehaviour
                 candidate,
                 (key, existing) => candidate.CombinedFitness > existing.CombinedFitness ? candidate : existing
             );
+
+
+
+            int completed = System.Threading.Interlocked.Increment(ref completedIterations);
+            if (trainingLogger != null && completed % trainingLogger.LogEveryNIterations == 0)
+                trainingLogger.LogGeometry(completed, new Dictionary<Vector2, Map>(safeArchive));
         });
 
         foreach (var kvp in safeArchive)
             geoArchive[kvp.Key] = kvp.Value;
 
-        trainingLogger?.LogGeometry(totalIterations, geoArchive);
+        
     }
 
     public void RunMapElitesEnemies()
@@ -120,11 +127,12 @@ public class MapElite : MonoBehaviour
 
     public void RunMapElitesFurnishing()
     {
+        int completedFurn = 0;
         var safeArchive = new ConcurrentDictionary<(Vector2, Vector2), Map>();
 
         var options = new System.Threading.Tasks.ParallelOptions
         {
-            MaxDegreeOfParallelism = 15
+            MaxDegreeOfParallelism = System.Environment.ProcessorCount - 2
         };
 
         System.Threading.Tasks.Parallel.For(0, totalIterations, options, i =>
@@ -150,12 +158,17 @@ public class MapElite : MonoBehaviour
                 candidate,
                 (key, existing) => candidate.CombinedFitness > existing.CombinedFitness ? candidate : existing
             );
+
+            int completed = System.Threading.Interlocked.Increment(ref completedFurn);
+            if (trainingLogger != null && completed % trainingLogger.LogEveryNIterations == 0)
+                trainingLogger.LogFurnishing(completed, new Dictionary<(Vector2, Vector2), Map>(safeArchive));
+
         });
 
         foreach (var kvp in safeArchive)
             furnArchive[kvp.Key] = kvp.Value;
 
-        trainingLogger?.LogFurnishing(totalIterations, furnArchive);
+        //trainingLogger?.LogFurnishing(totalIterations, furnArchive);
     }
 
     protected static Map GenerateRandomGeometry()
