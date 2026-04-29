@@ -16,9 +16,11 @@ public static class ObjectPlacementGenerator
     // The minimum ratio of powerups to health we want in optional rooms
     public const float PowerRatioInOptional = 0.6f;
 
-    public const float DefaultMutateSize = 0.2f;
+    public const float DefaultMutateSize = 0.3f;
 
-    public const float BiasStrength = 2f;
+    // If comp bias says there where 10% more of any enemy type, we make it twice as likely
+    public const float DeltaThatDoublesOdds = 0.10f;
+    public static readonly float BiasStrength = Mathf.Log(2f) / DeltaThatDoublesOdds;
 
     public static readonly Vector2 DefaultBudgetModifierRange = new(0.5f, 1.5f);
 
