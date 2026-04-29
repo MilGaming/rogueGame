@@ -79,6 +79,13 @@ public class CMA_ME : MapElite
         // Learned mutation tendencies, our "Covariance Matrix" 
         public float[] compBias = new float[MapHelpers.EnemyTypes.Length];
         public float diffBias = 0.0f;
+        // Size of mutation. Expand contract
+        public float mutationStepSize = 1.0f;
+
+        private const float StepUp = 1.30f;
+        private const float StepDown = 0.9f;
+        private const float MinStep = 0.20f;
+        private const float MaxStep = 3.00f;
 
         // Successful maps from this batch. Discovered new bins or had higher fitness
         public List<SuccessfulSample> parents = new();
@@ -179,6 +186,22 @@ public class CMA_ME : MapElite
                 // clamp to avoid huge jumps
                 diffBias = Mathf.Clamp(diffBias, -1f, 1f);
 
+                bool foundNewCell = parents.Any(p => p.discoveredNewCell);
+
+                if (foundNewCell)
+                {
+                    // We are still expanding into new behavior cells.
+                    // Take bigger mutations.
+                    mutationStepSize = Mathf.Min(mutationStepSize * StepUp, MaxStep);
+                }
+                else
+                {
+                    // We are only improving existing cells.
+                    // Refine locally.
+                    mutationStepSize = Mathf.Max(mutationStepSize * StepDown, MinStep);
+                }
+
+
                 // Reset batch state
                 parents.Clear();
                 sampledThisGeneration = 0;
@@ -191,7 +214,7 @@ public class CMA_ME : MapElite
 
                 compBias = new float[MapHelpers.EnemyTypes.Length];
                 diffBias = 0.0f;
-
+                mutationStepSize = 1.0f;
                 parents.Clear();
                 sampledThisGeneration = 0;
                 return;
@@ -201,12 +224,12 @@ public class CMA_ME : MapElite
         private float GetParentWeight(int sortedIndex)
         {
             // Simplest option: equal weights
-            return 1f / parents.Count;
+            //return 1f / parents.Count;
 
-            // Alternative if we want top samples to matter more:
-            // float raw = parents.Count - sortedIndex;
-            // float denom = parents.Count * (parents.Count + 1) / 2f;
-            // return raw / denom;
+            // Top samples to matter more:
+            float raw = parents.Count - sortedIndex;
+            float denom = parents.Count * (parents.Count + 1) / 2f;
+            return raw / denom;
         }
 
         private void NormalizeCompBias(float[] bias)
@@ -228,7 +251,12 @@ public class CMA_ME : MapElite
 
         public Map GenerateMap()
         {
-            return ObjectPlacementGenerator.BiasedMutateEnemies(referenceMap.Clone(), compBias, diffBias);
+            return ObjectPlacementGenerator.BiasedMutateEnemies(
+                referenceMap.Clone(),
+                compBias,
+                diffBias,
+                mutationStepSize
+            );
         }
     }
 

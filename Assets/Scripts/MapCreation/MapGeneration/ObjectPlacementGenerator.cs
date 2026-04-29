@@ -15,7 +15,7 @@ public static class ObjectPlacementGenerator
 
     public const float DefaultMutateSize = 0.3f;
 
-    public const float BiasStrength = 3f;
+    public const float BiasStrength = 2f;
 
     public static readonly Vector2 DefaultBudgetModifierRange = new(0.5f, 1.5f);
 
@@ -110,9 +110,11 @@ public static class ObjectPlacementGenerator
         return map;
     }
 
-    public static Map BiasedMutateEnemies(Map map, float[] compBias, float diffBias)
+    public static Map BiasedMutateEnemies(Map map, float[] compBias, float diffBias, float mutationStepSize)
     {
-        return MutateEnemies(map, compBias, diffBias, DefaultMutateSize, DefaultBudgetModifierRange, DefaultEnemyBaseBudget);
+        float mutateSize = Mathf.Clamp(DefaultMutateSize * mutationStepSize, 0.05f, 1.0f);
+
+        return MutateEnemies(map, compBias, diffBias, mutateSize, DefaultBudgetModifierRange, DefaultEnemyBaseBudget);
     }
     
 
@@ -144,7 +146,7 @@ public static class ObjectPlacementGenerator
         for (int i = 0; i < room.enemies.Count; i++)
         {
             EnemyType type = (EnemyType)room.enemies[i].type;
-            total += Mathf.Max(0f, 1f - BiasStrength * compBias[(int)type]);
+            total += Mathf.Exp(-BiasStrength * compBias[(int)type]);
         }
 
         float r = Random.Range(0f, total);
@@ -154,7 +156,7 @@ public static class ObjectPlacementGenerator
         for (int i = 0; i < room.enemies.Count; i++)
         {
             EnemyType type = (EnemyType)room.enemies[i].type;
-            r -= Mathf.Max(0f, 1f - BiasStrength * compBias[(int)type]);
+            r -= Mathf.Exp(-BiasStrength * compBias[(int)type]);
 
             if (r <= 0f)
             {
@@ -168,17 +170,20 @@ public static class ObjectPlacementGenerator
         }
     }
 
+
     private static EnemyType GetBiasedRandomEnemy(float[] bias)
     {
         int count = MapHelpers.EnemyTypes.Length;
 
+        float total = 0f;
+        float[] weights = new float[count];
         // Add up the chance for each enemy type.
         // Convert bias (-1 -> 1) into weights (0 -> 2)
-        // -1 = never picked, 0 = normal chance, +1 = double chance
-        float total = 0f;
         for (int i = 0; i < count; i++)
-            total += Mathf.Max(0f, 1f + BiasStrength * bias[i]);
-
+        {
+            weights[i] = Mathf.Exp(BiasStrength * bias[i]);
+            total += weights[i];
+        }
         // Pick a random point inside the total weight range
         float r = Random.Range(0f, total);
 
@@ -186,13 +191,11 @@ public static class ObjectPlacementGenerator
         // Each subtraction "consumes" one enemy type's portion
         for (int i = 0; i < count; i++)
         {
-            r -= Mathf.Max(0f, 1f + BiasStrength * bias[i]);
-
+            r -= weights[i];
             // When we cross zero, we've landed in this enemy's "slice"
             if (r <= 0f)
                 return MapHelpers.EnemyTypes[i];
         }
-
         // Fallback
         return MapHelpers.EnemyTypes[count - 1];
     }
