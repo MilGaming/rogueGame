@@ -24,45 +24,27 @@ public class RandomMapGenerator : MonoBehaviour
     {
         for(int i = 0; i<amount; i++)
         {
-            var newGeoMap = new Map();
-            GeometryGenerator.CreateMapGeometry(newGeoMap);
-            GeometryGenerator.BuildRoomTopology(newGeoMap);
-            var (fitness, behavior) = GeoFitAndBehav.GetGeoFitnessAndBehavior(newGeoMap);
-            newGeoMap.geoBehavior = new Vector2Int(behavior, 0);
-            newGeoMap.geoFitness = fitness;
-            geoArchive.Add(newGeoMap);
+            var map = new Map();
+            GeometryGenerator.CreateMapGeometry(map);
+            GeometryGenerator.BuildRoomTopology(map);
+            var (gFitness, gBehavior) = GeoFitAndBehav.GetGeoFitnessAndBehavior(map);
+            map.geoBehavior = new Vector2Int(gBehavior, 0);
+            map.geoFitness = gFitness;
+            ObjectPlacementGenerator.CreateLootOnMap(map);
+            ObjectPlacementGenerator.CreateObstaclesOnMap(map);
+            var (lFitness, lBehavior) = FurnFitAndBehav.GetFurnFitnessAndBehavior(map);
+            map.furnBehavior = new Vector2Int(lBehavior.lootDensity, lBehavior.obstacleDensity);
+            map.furnFitness = lFitness;
+            ObjectPlacementGenerator.CreateEnemiesOnMap(map);
+            var (eFitness, eBehavior) = EnemFitAndBehav.GetEnemyFitnessAndBehavior(map);
+            map.enemyBehavior = new Vector2Int(eBehavior.enemyType, eBehavior.difficulty);
+            map.enemFitness = eFitness;
+            enemArchive.Add(map);
         }
 
-        for(int i = 0; i<amount; i++)
-        {
-            Map selectedGeoMap = geoArchive[i];
-            var newFurnMap  = new Map(selectedGeoMap.Clone());
-            ObjectPlacementGenerator.CreateLootOnMap(newFurnMap);
-            ObjectPlacementGenerator.CreateObstaclesOnMap(newFurnMap);
-            var (fitness, behavior) = FurnFitAndBehav.GetFurnFitnessAndBehavior(newFurnMap);
-            newFurnMap.geoBehavior = selectedGeoMap.geoBehavior;
-            newFurnMap.geoFitness = selectedGeoMap.geoFitness;
-            newFurnMap.furnBehavior = new Vector2Int(behavior.lootDensity, behavior.obstacleDensity);
-            newFurnMap.furnFitness = fitness;
-            furnArchive.Add(newFurnMap);
-        }
-
-        for(int i = 0; i<amount; i++)
-        {
-            Map selectedFurnMap = furnArchive[i];
-            var newEneMap = new Map(selectedFurnMap.Clone());
-            ObjectPlacementGenerator.CreateEnemiesOnMap(newEneMap);
-            newEneMap.geoBehavior = selectedFurnMap.geoBehavior;
-            newEneMap.geoFitness = selectedFurnMap.geoFitness;
-            newEneMap.furnBehavior = selectedFurnMap.furnBehavior;
-            newEneMap.furnFitness = selectedFurnMap.furnFitness;
-            var (fitness, behavior) = EnemFitAndBehav.GetEnemyFitnessAndBehavior(newEneMap);
-            newEneMap.enemyBehavior = new Vector2Int(behavior.enemyType, behavior.difficulty);
-            newEneMap.enemFitness = fitness;
-            enemArchive.Add(newEneMap);
-        }
-        MapJsonExporter.SaveMaps(enemArchive, "Random_MapsEasy.json");
+        MapJsonExporter.SaveMaps(enemArchive, "Random_MapsUpdated.json");
     }
+    
 
 
 
