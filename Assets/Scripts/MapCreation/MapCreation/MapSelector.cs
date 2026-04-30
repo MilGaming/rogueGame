@@ -46,14 +46,16 @@ public class MapSelector : MonoBehaviour
         float[] averageEnemyComposition = new float[5];
         List<Map> selectedMaps = new List<Map>();
         HashSet<Vector2> chosenBehaviors = new HashSet<Vector2>();
-        
+
+        var compositions = new Dictionary<Map, float[]>();
         //Calculate average enemy composition for all maps
         foreach (var map in maps)
         {
-            var mapEnemyComposition = EnemFitAndBehav.GetEnemyComposition(map.GetAllEnemies());
-            for(int i=0; i<5; i++)
+            compositions[map] = EnemFitAndBehav.GetEnemyComposition(map.GetAllEnemies());
+            //var mapEnemyComposition = EnemFitAndBehav.GetEnemyComposition(map.GetAllEnemies());
+            for (int i=0; i<5; i++)
             {
-                averageEnemyComposition[i] += mapEnemyComposition[i];
+                averageEnemyComposition[i] += compositions[map][i];
             }
         }
         for (int i=0; i<5; i++)
@@ -63,13 +65,14 @@ public class MapSelector : MonoBehaviour
         }
         //Add level with closest to average enemy composition
         float highestSimilarity = 0f;
-        Map mapToAdd = new Map();
+        //Map mapToAdd = new Map();
+        Map mapToAdd = maps[0];
         float enemyCount = 0;
         foreach (var map in maps)
         {
 
             //Brute force fix, no good, but best option
-            float similarity = EnemFitAndBehav.GetCompositionSimilarity(averageEnemyComposition, EnemFitAndBehav.GetEnemyComposition(map.GetAllEnemies()));
+            float similarity = EnemFitAndBehav.GetCompositionSimilarity(averageEnemyComposition, compositions[map]);
             if(similarity > highestSimilarity)
             {
                 highestSimilarity = similarity;
@@ -78,7 +81,7 @@ public class MapSelector : MonoBehaviour
         }
         selectedMaps.Add(mapToAdd);
         chosenBehaviors.Add(mapToAdd.enemyBehavior);
-        logger.LogEnemyComp(mapToAdd, EnemFitAndBehav.GetEnemyComposition(mapToAdd.GetAllEnemies()), 1-highestSimilarity);
+        logger.LogEnemyComp(mapToAdd, compositions[mapToAdd], 1-highestSimilarity);
 
         //Add n (specified) amount of maps, decided by difference in enemy composition to already added maps.
         float lowestSimilarity;
@@ -93,7 +96,7 @@ public class MapSelector : MonoBehaviour
                 float similarity = 0;
                 //Ensures that maps are different from each other all together and not just multiple maps in two extreme ends of the enemy composition scale
                 foreach(var selectedMap in selectedMaps){
-                    similarity += EnemFitAndBehav.GetCompositionSimilarity(EnemFitAndBehav.GetEnemyComposition(selectedMap.GetAllEnemies()), EnemFitAndBehav.GetEnemyComposition(map.GetAllEnemies()));
+                    similarity += EnemFitAndBehav.GetCompositionSimilarity(compositions[selectedMap], compositions[map]);
                 }
                 similarity /= selectedMaps.Count;
                 if(similarity < lowestSimilarity)
@@ -104,7 +107,7 @@ public class MapSelector : MonoBehaviour
             }
             selectedMaps.Add(mapToAdd);
             chosenBehaviors.Add(mapToAdd.enemyBehavior);
-            logger.LogEnemyComp(mapToAdd, EnemFitAndBehav.GetEnemyComposition(mapToAdd.GetAllEnemies()), 1-lowestSimilarity);
+            logger.LogEnemyComp(mapToAdd, compositions[mapToAdd], 1-lowestSimilarity);
 
         }
         return selectedMaps;
@@ -117,12 +120,15 @@ public class MapSelector : MonoBehaviour
         float[] averageExplorationBehavior = new float[3];
         List<Map> selectedMaps = new List<Map>();
         HashSet<Vector2> chosenBehaviors = new HashSet<Vector2>();
+        var explorationBehaviors = new Dictionary<Map, float[]>();  
+
         foreach (var map in maps)
         {
-            float[] mapExploreComposition = GetMapExplorationBehavior(map);
-            for(int i=0; i<3; i++)
+            explorationBehaviors[map] = GetMapExplorationBehavior(map);
+            for (int i=0; i<3; i++)
             {
-                averageExplorationBehavior[i] += mapExploreComposition[i];
+                //averageExplorationBehavior[i] += mapExploreComposition[i];
+                averageExplorationBehavior[i] += explorationBehaviors[map][i];
             }
         }
         for (int i=0; i<3; i++)
@@ -132,10 +138,11 @@ public class MapSelector : MonoBehaviour
         }
         //Add level with closest to average exploration behavior
         float highestSimilarity = 0f;
-        Map mapToAdd = new Map();
+        //Map mapToAdd = new Map();
+        Map mapToAdd = maps[0];
         foreach (var map in maps)
         {
-            float similarity = GetExplorationBehaviorDistance(averageExplorationBehavior, GetMapExplorationBehavior(map));
+            float similarity = GetExplorationBehaviorDistance(averageExplorationBehavior, explorationBehaviors[map]);
             if(similarity > highestSimilarity)
                 {
                     highestSimilarity = similarity;
@@ -157,7 +164,7 @@ public class MapSelector : MonoBehaviour
                 }
                 float similarity = 0;
                 foreach(var selectedMap in selectedMaps){
-                    similarity += GetExplorationBehaviorDistance(GetMapExplorationBehavior(selectedMap), GetMapExplorationBehavior(map));
+                    similarity += GetExplorationBehaviorDistance(explorationBehaviors[selectedMap], explorationBehaviors[map]);
                 }
                 similarity /= selectedMaps.Count;
                 if(similarity < lowestSimilarity)
