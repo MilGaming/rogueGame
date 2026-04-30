@@ -210,7 +210,7 @@ public class MapElite : MonoBehaviour
         var map = new Map();
         GeometryGenerator.CreateMapGeometry(map);
         GeometryGenerator.BuildRoomTopology(map);
-        return new Map(map);
+        return map;
 
     }
 
@@ -227,10 +227,21 @@ public class MapElite : MonoBehaviour
         ObjectPlacementGenerator.CreateObstaclesOnMap(child);
         return child;
     }
-    protected static Map SelectRandom<TKey>(Dictionary<TKey, Map> archive)
+    /*protected static Map SelectRandom<TKey>(Dictionary<TKey, Map> archive)
     {
         var list = archive.Values.ToList();
         return list[Rng.Next(0, list.Count)];
+    }*/
+    protected static Map SelectRandom<TKey>(Dictionary<TKey, Map> archive) //we do a little optimal selecting
+    {
+        int index = Rng.Next(0, archive.Count);
+        int i = 0;
+        foreach (var value in archive.Values)
+        {
+            if (i == index) return value;
+            i++;
+        }
+        return null;
     }
 
     protected static Map MutateGeometry(Map parent)
